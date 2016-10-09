@@ -8,7 +8,8 @@ void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* pa
     {
         return;
     }
-    if(m_map->getNode(x, y)->getType() == Node::NodeType::Forbidden)
+    auto nodeType = m_map->getNode(x, y)->getType();
+    if(nodeType == Node::FORBIDDEN || nodeType == Node::NONE)
     {
         return;
     }
@@ -192,7 +193,7 @@ bool SearchMap::checkPathIntegrity()
     {
         for(int i = 0; i < m_pathToGoal.size(); i++)
         {
-            if(m_map->getNode(m_pathToGoal[i])->getType() == Node::Forbidden)
+            if(m_map->getNode(m_pathToGoal[i])->getType() == Node::FORBIDDEN)
             {
                 return false;
             }

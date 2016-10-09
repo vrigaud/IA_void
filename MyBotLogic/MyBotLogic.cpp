@@ -33,7 +33,7 @@ MyBotLogic::MyBotLogic()
 {
     //Write Code Here
 #ifdef BOT_LOGIC_DEBUG
-    Sleep(2000);
+    Sleep(5000);
 #endif
 }
 
@@ -47,8 +47,7 @@ MyBotLogic::MyBotLogic()
     {
         for(int j = 0; j < colCount; ++j)
         {
-            // TODO - changer normal en NONE et mettre en place un type PATH
-            MyMap.createNode(new Node{j, i, countIndex, Node::Normal});
+            MyMap.createNode(new Node{j, i, countIndex, Node::NONE});
             countIndex++;
         }
     }
@@ -78,16 +77,21 @@ MyBotLogic::MyBotLogic()
     {
         auto tileInfo = info.second;
 
-        auto ITisForbidden = tileInfo.tileAttributes.find(TileAttribute_Forbidden);
-        auto ITisTarget = tileInfo.tileAttributes.find(TileAttribute_Target);
+        auto ITisForbidden = find(begin(tileInfo.tileAttributes), end(tileInfo.tileAttributes), TileAttribute_Forbidden);
+        auto ITisTarget = find(begin(tileInfo.tileAttributes), end(tileInfo.tileAttributes), TileAttribute_Target);
+        auto ITisDescriptor = find(begin(tileInfo.tileAttributes), end(tileInfo.tileAttributes), TileAttribute_Descriptor);
         if(ITisForbidden != tileInfo.tileAttributes.end())
         {
-            MyMap.setNodeType(tileInfo.tileID, Node::Forbidden);
+            MyMap.setNodeType(tileInfo.tileID, Node::FORBIDDEN);
         }
         else if(ITisTarget != tileInfo.tileAttributes.end())
         {
-            MyMap.setNodeType(tileInfo.tileID, Node::Goal);
+            MyMap.setNodeType(tileInfo.tileID, Node::GOAL);
             MyMap.addGoalTile(tileInfo.tileID);
+        }
+        else if (ITisDescriptor != tileInfo.tileAttributes.end())
+        {
+            MyMap.setNodeType(tileInfo.tileID, Node::PATH);
         }
     }
 
@@ -102,6 +106,7 @@ MyBotLogic::MyBotLogic()
             MyMap.addSearchMap(info.second.npcID, npcSMap);
             npcSMap->search();
         }
+
         SearchMap* npcMap = MyMap.getSearchMap(info.second.npcID);
         int nextTile = npcMap->getNextPathTile();
         if(nextTile > 0)
@@ -159,7 +164,7 @@ MyBotLogic::MyBotLogic()
                 if(npcMap->getNextPathTile() < 0)
                 {
                     // If it's -1, this NPC finished his path
-                    MyMap.setNodeType(nextNpcTile, Node::Forbidden);
+                    MyMap.setNodeType(nextNpcTile, Node::FORBIDDEN);
                 }
             }
         }
