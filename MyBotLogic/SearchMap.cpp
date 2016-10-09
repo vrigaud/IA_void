@@ -178,16 +178,6 @@ int SearchMap::getNextPathTile()
     unsigned int index = m_pathToGoal[m_pathToGoal.size() - 2];
     return index;
 }
-int SearchMap::getNextPathTileAndErase()
-{
-    if(m_pathToGoal.size() == 1)
-    {
-        return -1;
-    }
-    unsigned int index = m_pathToGoal[m_pathToGoal.size() - 2];
-    m_pathToGoal.pop_back();
-    return index;
-}
 
 void SearchMap::FindAnotherPath()
 {
