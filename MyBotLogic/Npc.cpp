@@ -1,4 +1,7 @@
 #include "Npc.h"
+#include "Map.h"
+
+/* INCLUDE FROM CARLE */
 #include "Globals.h"
 
 #include <algorithm>
@@ -17,7 +20,7 @@ Npc::Npc(unsigned int a_id, std::string a_path)
 
 void Npc::update()
 {
-    while (m_currentState != m_nextState)
+    do
     {
         m_currentState = m_nextState;
         // TODO - Change State to another
@@ -40,7 +43,7 @@ void Npc::update()
             m_currentState = ARRIVED;
             break;
         }
-    }
+    } while (m_currentState != m_nextState);
 }
 
 bool Npc::stopEverything()
@@ -124,8 +127,13 @@ void Npc::followPath()
 {
     // TODO - follow the path
     // Get the direction between the two last nodes of m_path
-
-    // Update the action vector and push a move action
+    if (getCurrentTileId() == m_goal)
+    {
+        m_nextState = ARRIVED;
+        return;
+    }
+    m_nextActions.push_back(Move{ m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    m_nextState = MOVING;
 }
 
 void Npc::wait()

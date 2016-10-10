@@ -52,13 +52,9 @@ unsigned Map::getBestGoalTile(int start)
     return goalIndex;
 }
 
-EDirection Map::getNextDirection(unsigned int npcId, unsigned int tileId)
+EDirection Map::getNextDirection(unsigned int a_start, unsigned int a_end)
 {
-    SearchMap* npcMap = m_searchMap[npcId];
-
-    int getNextTile = npcMap->getNextPathTile();
-
-    std::string direction = getStringDirection(tileId, getNextTile);
+    std::string direction = getStringDirection(a_start, a_end);
 
     if(direction == "N")
     {
@@ -140,3 +136,4 @@ std::string Map::getStringDirection(unsigned int start, unsigned int end)
 
     return direction;
 }
+

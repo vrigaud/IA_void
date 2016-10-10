@@ -30,7 +30,7 @@ public:
     Node* getNode(unsigned int, unsigned int);
     Node* getNode(unsigned int);
     unsigned int getBestGoalTile(int start);
-    EDirection getNextDirection(unsigned int npcId, unsigned int tileId);
+    EDirection getNextDirection(unsigned int a_start, unsigned int a_end);
     static Map *get() noexcept
     {
         return &m_instance;
@@ -67,7 +67,7 @@ public:
     }
 
     // TODO - Return the npc path
-    std::vector<unsigned int> getNpcPath(unsigned int);
+    std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 };
 
 #endif // MAP_HEADER
