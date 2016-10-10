@@ -2,6 +2,8 @@
 #include "TurnInfo.h"
 #include "SearchMap.h"
 
+Map Map::m_instance;
+
 void Map::setNodeType(unsigned int tileId, Node::NodeType tileType)
 {
     m_nodeMap[tileId]->setType(tileType);
@@ -9,8 +11,7 @@ void Map::setNodeType(unsigned int tileId, Node::NodeType tileType)
 
 void Map::createNode(Node* node)
 {
-    std::pair<unsigned int, Node*> temp{node->getId(), node};
-    m_nodeMap.insert(temp);
+    m_nodeMap[node->getId()] = node;
 }
 
 Node* Map::getNode(unsigned int x, unsigned int y)
@@ -51,11 +52,10 @@ unsigned Map::getBestGoalTile(int start)
     return goalIndex;
 }
 
-EDirection Map::getNextDirection(unsigned npcId, unsigned int tileId)
+EDirection Map::getNextDirection(unsigned int npcId, unsigned int tileId)
 {
     SearchMap* npcMap = m_searchMap[npcId];
 
-    //int getNextTile = npcMap->getNextPathTileAndErase();
     int getNextTile = npcMap->getNextPathTile();
 
     std::string direction = getStringDirection(tileId, getNextTile);
@@ -95,7 +95,7 @@ EDirection Map::getNextDirection(unsigned npcId, unsigned int tileId)
     return NE;
 }
 
-std::string Map::getStringDirection(unsigned start, unsigned end)
+std::string Map::getStringDirection(unsigned int start, unsigned int end)
 {
     Node* nStart = m_nodeMap[start];
     Node* nEnd = m_nodeMap[end];

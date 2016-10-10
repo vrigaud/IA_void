@@ -1,5 +1,4 @@
 #include "MyBotLogic.h"
-#include <algorithm>
 #include "TurnInfo.h"
 #include "LevelInfo.h"
 #include "SearchMap.h"
@@ -39,15 +38,17 @@ MyBotLogic::MyBotLogic()
 
 /*virtual*/ void MyBotLogic::Init(LevelInfo& _levelInfo)
 {
-    unsigned int rowCount = _levelInfo.rowCount;
-    unsigned int colCount = _levelInfo.colCount;
-    MyMap = Map(colCount, rowCount);
+    int rowCount = _levelInfo.rowCount;
+    int colCount = _levelInfo.colCount;
+    Map *myMap = Map::get();
+    myMap->setHeight(rowCount);
+    myMap->setWidth(colCount);
     unsigned int countIndex = 0;
     for(int i = 0; i < rowCount; ++i)
     {
         for(int j = 0; j < colCount; ++j)
         {
-            MyMap.createNode(new Node{j, i, countIndex, Node::NONE});
+            myMap->createNode(new Node{j, i, countIndex, Node::NONE});
             countIndex++;
         }
     }
@@ -72,6 +73,7 @@ MyBotLogic::MyBotLogic()
 
 /*virtual*/ void MyBotLogic::FillActionList(TurnInfo& _turnInfo, std::vector<Action*>& _actionList)
 {
+    Map *myMap = Map::get();
     // Update graph
     for each(auto info in _turnInfo.tiles)
     {
@@ -82,32 +84,32 @@ MyBotLogic::MyBotLogic()
         auto ITisDescriptor = find(begin(tileInfo.tileAttributes), end(tileInfo.tileAttributes), TileAttribute_Descriptor);
         if(ITisForbidden != tileInfo.tileAttributes.end())
         {
-            MyMap.setNodeType(tileInfo.tileID, Node::FORBIDDEN);
+            myMap->setNodeType(tileInfo.tileID, Node::FORBIDDEN);
         }
         else if(ITisTarget != tileInfo.tileAttributes.end())
         {
-            MyMap.setNodeType(tileInfo.tileID, Node::GOAL);
-            MyMap.addGoalTile(tileInfo.tileID);
+            myMap->setNodeType(tileInfo.tileID, Node::GOAL);
+            myMap->addGoalTile(tileInfo.tileID);
         }
         else if (ITisDescriptor != tileInfo.tileAttributes.end())
         {
-            MyMap.setNodeType(tileInfo.tileID, Node::PATH);
+            myMap->setNodeType(tileInfo.tileID, Node::PATH);
         }
     }
 
     // Initialize map and goal for npcs
     for each(auto info in _turnInfo.npcs)
     {
-        if(MyMap.getSearchMap(info.second.npcID) == nullptr)
+        if(myMap->getSearchMap(info.second.npcID) == nullptr)
         {
             // TODO - check between all npcs to find wich one is the best to go on the goal tile
-            int goalTile = MyMap.getBestGoalTile(info.second.tileID);
-            auto npcSMap = new SearchMap(&MyMap, MyMap.getNode(info.second.tileID), MyMap.getNode(goalTile));
-            MyMap.addSearchMap(info.second.npcID, npcSMap);
+            int goalTile = myMap->getBestGoalTile(info.second.tileID);
+            auto npcSMap = new SearchMap(myMap->getNode(info.second.tileID), myMap->getNode(goalTile));
+            myMap->addSearchMap(info.second.npcID, npcSMap);
             npcSMap->search();
         }
 
-        SearchMap* npcMap = MyMap.getSearchMap(info.second.npcID);
+        SearchMap* npcMap = myMap->getSearchMap(info.second.npcID);
         int nextTile = npcMap->getNextPathTile();
         if(nextTile > 0)
         {
@@ -119,7 +121,7 @@ MyBotLogic::MyBotLogic()
     for each(auto info in _turnInfo.npcs)
     {
         // Get my search map
-        SearchMap* npcMap = MyMap.getSearchMap(info.second.npcID);
+        SearchMap* npcMap = myMap->getSearchMap(info.second.npcID);
 
         // If my npc path is not correct anymore, we try to find another path
         if(!npcMap->checkPathIntegrity())
@@ -140,14 +142,14 @@ MyBotLogic::MyBotLogic()
                    && curP.second == nextNpcTile)
                 {
                     // Handle 
-                    if(MyMap.getSearchMap(curP.first)->pathSize() > npcMap->pathSize())
+                    if(myMap->getSearchMap(curP.first)->pathSize() > npcMap->pathSize())
                     {
                         canMoveOnThisTile = false;
                         break;
                     }
                     // else prioritize by npcs id
                     if(curP.first < info.second.npcID
-                       && MyMap.getSearchMap(curP.first)->pathSize() == npcMap->pathSize())
+                       && myMap->getSearchMap(curP.first)->pathSize() == npcMap->pathSize())
                     {
                         canMoveOnThisTile = false;
                         break;
@@ -158,13 +160,13 @@ MyBotLogic::MyBotLogic()
             if(canMoveOnThisTile)
             {
                 // Add the action in the list
-                _actionList.push_back(new Move(info.second.npcID, MyMap.getNextDirection(info.second.npcID, info.second.tileID)));
+                _actionList.push_back(new Move(info.second.npcID, myMap->getNextDirection(info.second.npcID, info.second.tileID)));
 
                 // Check the next npc move
                 if(npcMap->getNextPathTile() < 0)
                 {
                     // If it's -1, this NPC finished his path
-                    MyMap.setNodeType(nextNpcTile, Node::FORBIDDEN);
+                    myMap->setNodeType(nextNpcTile, Node::FORBIDDEN);
                 }
             }
         }
@@ -172,7 +174,7 @@ MyBotLogic::MyBotLogic()
     //m_nextNpcMove.clear();
     for(Action* pAction : _actionList)
     {
-        auto npcMap = MyMap.getSearchMap(pAction->unitID);
+        auto npcMap = myMap->getSearchMap(pAction->unitID);
         npcMap->popLastTile();
     }
 }
