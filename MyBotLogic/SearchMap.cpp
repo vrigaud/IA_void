@@ -4,17 +4,18 @@
 
 void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* parent)
 {
-    if(x < 0 || x > m_map->getWidth() - 1 || y < 0 || y > m_map->getHeight() - 1)
+    Map* myMap = Map::get();
+    if(x < 0 || x > myMap->getWidth() - 1 || y < 0 || y > myMap->getHeight() - 1)
     {
         return;
     }
-    auto nodeType = m_map->getNode(x, y)->getType();
+    auto nodeType = myMap->getNode(x, y)->getType();
     if(nodeType == Node::FORBIDDEN || nodeType == Node::NONE)
     {
         return;
     }
 
-    int id = m_map->getWidth() * y + x;
+    int id = myMap->getWidth() * y + x;
 
     for(int i = 0; i < closedList.size(); i++)
     {
@@ -102,7 +103,7 @@ void SearchMap::search()
     }
 }
 
-SearchMap::SearchMap(Map* m, Node* start, Node* goal): m_map(m)
+SearchMap::SearchMap(Node* start, Node* goal)
 {
     initSearchMap(start, goal);
 }
@@ -183,7 +184,7 @@ int SearchMap::getNextPathTile()
 void SearchMap::FindAnotherPath()
 {
     m_isInitialized = false;
-    initSearchMap(m_map->getNode(m_pathToGoal.back()), m_map->getNode(m_goal->getId()));
+    initSearchMap(Map::get()->getNode(m_pathToGoal.back()), Map::get()->getNode(m_goal->getId()));
     search();
 }
 
@@ -193,7 +194,7 @@ bool SearchMap::checkPathIntegrity()
     {
         for(int i = 0; i < m_pathToGoal.size(); i++)
         {
-            if(m_map->getNode(m_pathToGoal[i])->getType() == Node::FORBIDDEN)
+            if(Map::get()->getNode(m_pathToGoal[i])->getType() == Node::FORBIDDEN)
             {
                 return false;
             }
