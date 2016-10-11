@@ -34,7 +34,7 @@ float Map::calculateDistance(int indexStart, int indexEnd)
     return abs(x) + abs(y);
 }
 
-unsigned Map::getBestGoalTile(int start)
+unsigned int Map::getBestGoalTile(int start)
 {
     float bestDistance = 999999.0f;
     int index = -1;
@@ -137,3 +137,13 @@ std::string Map::getStringDirection(unsigned int start, unsigned int end)
     return direction;
 }
 
+std::vector<unsigned int> Map::getNpcPath(unsigned int a_start, unsigned int a_end)
+{
+    SearchMap mySearch{ getNode(a_start), getNode(a_end)};
+    return mySearch.search();
+}
+
+bool Map::isFordibben(unsigned int a_tileId)
+{
+    return getNode(a_tileId)->getType() == Node::FORBIDDEN;
+}

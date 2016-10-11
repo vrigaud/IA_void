@@ -7,8 +7,8 @@
 #include <algorithm>
 
 
-Npc::Npc(unsigned int a_id, std::string a_path)
-    : m_currentState{ NONE }, m_nextState{ EXPLORING }, m_id{ a_id }, m_goal{}, m_hasGoal{ false }, m_path{}, m_nextActions{}
+Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
+    : m_currentState{ NONE }, m_nextState{ EXPLORING }, m_id{ a_id }, m_goal{}, m_hasGoal{ false }, m_path{ a_tileId }, m_nextActions{}
 {
 #ifdef BOT_LOGIC_DEBUG_NPC
     m_logger.Init(a_path, "Npc_" + std::to_string(m_id) + ".log");
@@ -20,6 +20,7 @@ Npc::Npc(unsigned int a_id, std::string a_path)
 
 void Npc::update()
 {
+    updatePath();
     do
     {
         m_currentState = m_nextState;
@@ -44,19 +45,30 @@ void Npc::update()
             break;
         }
     } while (m_currentState != m_nextState);
+    int test = 0;
 }
 
 bool Npc::stopEverything()
 {
+    // deleting item
+    for (std::vector< Action* >::iterator it = m_nextActions.begin(); it != m_nextActions.end(); ++it)
+    {
+        delete (*it);
+    }
     m_nextActions.clear();
+    return true;
 }
 
 void Npc::stopMoving()
 {
     auto it = std::partition(std::begin(m_nextActions),
         std::end(m_nextActions),
-        [](const Action& curAction) { return curAction.actionType == Action_Move;});
+        [](const Action* curAction) { return curAction->actionType != Action_Move;});
 
+    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    {
+        delete (*itDelete);
+    }
     m_nextActions.erase(it, std::end(m_nextActions));
 }
 
@@ -64,8 +76,12 @@ void Npc::stopInteract()
 {
     auto it = std::partition(std::begin(m_nextActions),
         std::end(m_nextActions),
-        [](const Action& curAction) { return curAction.actionType == Action_Interact;});
+        [](const Action* curAction) { return curAction->actionType == Action_Interact;});
 
+    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    {
+        delete (*itDelete);
+    }
     m_nextActions.erase(it, std::end(m_nextActions));
 }
 
@@ -73,8 +89,8 @@ void Npc::unstackActions()
 {
     while (m_nextActions.size()) 
     {
-        Action& curAction{ m_nextActions.back() };
-        switch (curAction.actionType)
+        Action* curAction{ m_nextActions.back() };
+        switch (curAction->actionType)
         {
         case Action_None:
             // Do nothing
@@ -90,11 +106,27 @@ void Npc::unstackActions()
     }
 }
 
+void Npc::calculPath()
+{
+    if (!hasGoal())
+    {
+        return;
+    }
+    m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+}
+
 bool Npc::updatePath()
 {
     // TODO - check path integrity and update if needed.
-
-    return true;
+    for (unsigned int tileId : m_path)
+    {
+        if (Map::get()->isFordibben(tileId))
+        {
+            m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+            return true;
+        }
+    }
+    return false;
 }
 
 int Npc::getNextPathTile() const
@@ -110,7 +142,7 @@ int Npc::getNextPathTile() const
 void Npc::explore()
 {
     // TODO - explore the map with a lot of efficiency
-    if (m_hasGoal)
+    if (hasGoal())
     {
         m_nextState = MOVING;
         return;
@@ -132,7 +164,7 @@ void Npc::followPath()
         m_nextState = ARRIVED;
         return;
     }
-    m_nextActions.push_back(Move{ m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    m_nextActions.push_back( new Move{ m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
     m_nextState = MOVING;
 }
 
