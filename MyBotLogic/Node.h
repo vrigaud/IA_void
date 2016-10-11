@@ -16,9 +16,10 @@ class Node
 public:
     enum NodeType
     {
-        Forbidden,
-        Goal,
-        Normal,
+        NONE,
+        FORBIDDEN,
+        GOAL,
+        PATH,
     };
 private:
     Position* m_pos;

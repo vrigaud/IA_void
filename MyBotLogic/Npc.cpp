@@ -1,8 +1,14 @@
 #include "Npc.h"
-#include <windows.h>
+#include "Map.h"
 
-Npc::Npc(unsigned int a_id, std::string a_path)
-    : m_currentState{ NONE }, m_nextState{ NONE }, m_id{ a_id }
+/* INCLUDE FROM CARLE */
+#include "Globals.h"
+
+#include <algorithm>
+
+
+Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
+    : m_currentState{ NONE }, m_nextState{ EXPLORING }, m_id{ a_id }, m_goal{}, m_hasGoal{ false }, m_path{ a_tileId }, m_nextActions{}
 {
 #ifdef BOT_LOGIC_DEBUG_NPC
     m_logger.Init(a_path, "Npc_" + std::to_string(m_id) + ".log");
@@ -14,26 +20,160 @@ Npc::Npc(unsigned int a_id, std::string a_path)
 
 void Npc::update()
 {
-    while (m_currentState != m_nextState)
+    updatePath();
+    do
     {
+        m_currentState = m_nextState;
         // TODO - Change State to another
         switch (m_currentState)
         {
         case(MOVING):
-
+            followPath();
             break;
         case(WAITING):
-
+            wait();
             break;
         case(EXPLORING):
-
+            explore();
             break;
         case(INTERACTING):
-
+            interact();
             break;
         case(ARRIVED):
-
+            m_nextState = ARRIVED; // May be useless atm
+            m_currentState = ARRIVED;
             break;
         }
+    } while (m_currentState != m_nextState);
+    int test = 0;
+}
+
+bool Npc::stopEverything()
+{
+    // deleting item
+    for (std::vector< Action* >::iterator it = m_nextActions.begin(); it != m_nextActions.end(); ++it)
+    {
+        delete (*it);
     }
+    m_nextActions.clear();
+    return true;
+}
+
+void Npc::stopMoving()
+{
+    auto it = std::partition(std::begin(m_nextActions),
+        std::end(m_nextActions),
+        [](const Action* curAction) { return curAction->actionType != Action_Move;});
+
+    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    {
+        delete (*itDelete);
+    }
+    m_nextActions.erase(it, std::end(m_nextActions));
+}
+
+void Npc::stopInteract()
+{
+    auto it = std::partition(std::begin(m_nextActions),
+        std::end(m_nextActions),
+        [](const Action* curAction) { return curAction->actionType == Action_Interact;});
+
+    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    {
+        delete (*itDelete);
+    }
+    m_nextActions.erase(it, std::end(m_nextActions));
+}
+
+void Npc::unstackActions()
+{
+    while (m_nextActions.size()) 
+    {
+        Action* curAction{ m_nextActions.back() };
+        switch (curAction->actionType)
+        {
+        case Action_None:
+            // Do nothing
+            break;
+        case Action_Move:
+            moveForwardOnPath();
+            break;
+        case Action_Interact:
+            // TODO - do nothing atm
+            break;
+        }
+        m_nextActions.pop_back();
+    }
+}
+
+void Npc::calculPath()
+{
+    if (!hasGoal())
+    {
+        return;
+    }
+    m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+}
+
+bool Npc::updatePath()
+{
+    // TODO - check path integrity and update if needed.
+    for (unsigned int tileId : m_path)
+    {
+        if (Map::get()->isFordibben(tileId))
+        {
+            m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+            return true;
+        }
+    }
+    return false;
+}
+
+int Npc::getNextPathTile() const
+{
+    if (m_path.size() == 1)
+    {
+        return -1;
+    }
+    unsigned int index = m_path[m_path.size() - 2];
+    return index;
+}
+
+void Npc::explore()
+{
+    // TODO - explore the map with a lot of efficiency
+    if (hasGoal())
+    {
+        m_nextState = MOVING;
+        return;
+    }
+
+    // Ask map for potential direction
+
+    // Choose a direction
+
+    // Update next action in the vector
+}
+
+void Npc::followPath()
+{
+    // TODO - follow the path
+    // Get the direction between the two last nodes of m_path
+    if (getCurrentTileId() == m_goal)
+    {
+        m_nextState = ARRIVED;
+        return;
+    }
+    m_nextActions.push_back( new Move{ m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    m_nextState = MOVING;
+}
+
+void Npc::wait()
+{
+    // TODO - Test why we are blocked ?
+}
+
+void Npc::interact()
+{
+    // TODO - interact with some fancy stuff
 }
