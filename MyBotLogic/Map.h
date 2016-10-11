@@ -68,6 +68,9 @@ public:
 
     // TODO - Return the npc path
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
+
+    //TODO - Check if a tile is forbidden
+    bool isFordibben(unsigned int a_tileId);
 };
 
 #endif // MAP_HEADER

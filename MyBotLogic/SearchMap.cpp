@@ -49,13 +49,13 @@ void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* pa
     openList.push_back(node);
 }
 
-void SearchMap::search()
+std::vector<unsigned int> SearchMap::search()
 {
     while (!m_isGoalFound)
     {
         if (openList.empty())
         {
-            return;
+            return std::vector<unsigned int>{};
         }
 
         SearchNode* current = getNextNodeToSearch();
@@ -68,7 +68,7 @@ void SearchMap::search()
                 m_pathToGoal.push_back(getPath->getId());
             }
             m_isGoalFound = true;
-            return;
+            return m_pathToGoal;
         }
         if (current->getY() % 2 == 0)
         {

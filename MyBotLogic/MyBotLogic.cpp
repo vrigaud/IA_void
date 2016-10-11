@@ -3,6 +3,7 @@
 #include "LevelInfo.h"
 #include "SearchMap.h"
 #include <windows.h>
+#include <algorithm>
 #include "Map.h"
 
 MyBotLogic::MyBotLogic()
@@ -57,7 +58,7 @@ MyBotLogic::MyBotLogic()
     BOT_LOGIC_LOG(mLogger, "init npcs", true);
     for(std::pair<unsigned int, NPCInfo> curNpcs : _levelInfo.npcs)
     {
-        m_npcs[curNpcs.second.npcID] = new Npc(curNpcs.second.npcID, m_logPath);
+        m_npcs[curNpcs.second.npcID] = new Npc(curNpcs.second.npcID, curNpcs.second.tileID, m_logPath);
     }
 }
 
@@ -97,86 +98,70 @@ MyBotLogic::MyBotLogic()
         }
     }
 
-    // Initialize map and goal for npcs
-    for each(auto info in _turnInfo.npcs)
+    // Calcul path for npc and set goal tile
+    for (std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
     {
-        if(myMap->getSearchMap(info.second.npcID) == nullptr)
+        Npc* myNpc = m_npcs[curNpc.first];
+        if (!myNpc->hasGoal())
         {
-            // TODO - check between all npcs to find wich one is the best to go on the goal tile
-            int goalTile = myMap->getBestGoalTile(info.second.tileID);
-            auto npcSMap = new SearchMap(myMap->getNode(info.second.tileID), myMap->getNode(goalTile));
-            myMap->addSearchMap(info.second.npcID, npcSMap);
-            npcSMap->search();
+            unsigned int goalTile = myMap->getBestGoalTile(curNpc.second.tileID);
+            myNpc->setGoal(goalTile);
         }
-
-        SearchMap* npcMap = myMap->getSearchMap(info.second.npcID);
-        int nextTile = npcMap->getNextPathTile();
-        if(nextTile > 0)
-        {
-            m_nextNpcMove[info.second.npcID] = nextTile;
-        }
+        myNpc->calculPath();
     }
 
     // Move Npcs
     for each(auto info in _turnInfo.npcs)
     {
         // Get my search map
-        SearchMap* npcMap = myMap->getSearchMap(info.second.npcID);
+        Npc* myNpc = m_npcs[info.first];
 
         // If my npc path is not correct anymore, we try to find another path
-        if(!npcMap->checkPathIntegrity())
-        {
-            npcMap->FindAnotherPath();
-        }
+        myNpc->update();
 
         // Get next npc tile
-        int nextNpcTile = npcMap->getNextPathTile();
+        int nextNpcTile = myNpc->getNextPathTile();
 
-        if(nextNpcTile > 0)
+        if (nextNpcTile > 0)
         {
-            // Check if we can move on expected tile handle letting bro pass first
-            bool canMoveOnThisTile = true;
-            for(std::pair<unsigned int, unsigned int> curP : m_nextNpcMove)
+            // check if npc can move on nextTile
+            for (std::pair<unsigned int, Npc*> curP : m_npcs)
             {
-                if(curP.first != info.second.npcID
-                   && curP.second == nextNpcTile)
+                
+                if (curP.first != myNpc->getId()
+                    && curP.second->getNextPathTile() == nextNpcTile)
                 {
-                    // Handle 
-                    if(myMap->getSearchMap(curP.first)->pathSize() > npcMap->pathSize())
+                    // Handle
+                    if (myNpc->getPathSize() < curP.second->getPathSize())
                     {
-                        canMoveOnThisTile = false;
+                        myNpc->stopMoving();
                         break;
                     }
                     // else prioritize by npcs id
-                    if(curP.first < info.second.npcID
-                       && myMap->getSearchMap(curP.first)->pathSize() == npcMap->pathSize())
+                    if (curP.first < myNpc->getId()
+                        && myNpc->getPathSize() == curP.second->getPathSize())
                     {
-                        canMoveOnThisTile = false;
+                        myNpc->stopMoving();
                         break;
                     }
                 }
             }
-
-            if(canMoveOnThisTile)
+            // copy npc's action list into the action list
+            for (Action* curAction : myNpc->getActions())
             {
-                // Add the action in the list
-                _actionList.push_back(new Move(info.second.npcID, myMap->getNextDirection(info.second.npcID, info.second.tileID)));
+                _actionList.push_back(curAction->Clone());
+            }
 
-                // Check the next npc move
-                if(npcMap->getNextPathTile() < 0)
-                {
-                    // If it's -1, this NPC finished his path
-                    myMap->setNodeType(nextNpcTile, Node::FORBIDDEN);
-                }
+            if (myNpc->getNextPathTile() < 0)
+            {
+                // If it's -1, this NPC finished his path
+                myMap->setNodeType(nextNpcTile, Node::FORBIDDEN);
             }
         }
     }
-    //m_nextNpcMove.clear();
-    for(Action* pAction : _actionList)
-    {
-        auto npcMap = myMap->getSearchMap(pAction->unitID);
-        npcMap->popLastTile();
-    }
+    std::for_each(begin(m_npcs),
+        end(m_npcs), 
+        [](std::pair<unsigned int, Npc*> myNpc) {myNpc.second->unstackActions();});
 }
 
 /*virtual*/ void MyBotLogic::Exit()

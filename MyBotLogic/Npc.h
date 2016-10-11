@@ -35,11 +35,16 @@ private:
     unsigned int m_goal;
     bool m_hasGoal;
     std::vector<unsigned int> m_path;
-    std::vector<Action> m_nextActions;
+    std::vector<Action*> m_nextActions;
     Logger m_logger;
 
 public:
-    Npc(unsigned int a_id, std::string a_path);
+    Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path);
+
+    unsigned int getId()
+    {
+        return m_id;
+    }
 
     // Main fonction for our Npc's FSM 
     void update();
@@ -56,11 +61,12 @@ public:
     // Unstack m_nextAction and act according to action_type
     void unstackActions();
 
+    void calculPath();
     // check path integrity, if pass is corrupted, try to find a new path return true if found
     bool updatePath();
     unsigned int getCurrentTileId()
     {
-        return m_path.front();
+        return m_path.back();
     }
     int getNextPathTile()const;
     unsigned int getPathSize() const
@@ -75,17 +81,27 @@ public:
     void setGoal(unsigned int a_id)
     {
         m_goal = a_id;
+        m_hasGoal = true;
+    }
+    void unsetGoal()
+    {
+        m_hasGoal = false;
     }
     bool isOnGoalTile() const
     {
         return m_currentState == ARRIVED;
     }
+    bool hasGoal() const
+    {
+        return m_hasGoal;
+    }
+
     void moveForwardOnPath() // remove last tileId from m_path
     {
         m_path.pop_back();
     }
 
-    std::vector<Action>& getActions()
+    std::vector<Action*>& getActions()
     {
         return m_nextActions;
     }
