@@ -69,8 +69,17 @@ public:
     // TODO - Return the npc path
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 
-    //TODO - Check if a tile is forbidden
+    // TODO - Check if a tile is forbidden
     bool isFordibben(unsigned int a_tileId);
+
+    // TODO - Return all interesting node near one tile as vector
+    /*
+     * Do not add forbidden tile or blocked tile
+     * Do not add blocked tile (by other npc)
+     * And do not add impass tile (5 wall)
+     */
+    std::vector<unsigned int> getNearInterestingTile(unsigned int a_id);
+
 };
 
 #endif // MAP_HEADER
