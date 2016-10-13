@@ -33,6 +33,7 @@ private:
     npcState m_currentState, m_nextState;
     unsigned int m_id;
     unsigned int m_goal;
+    unsigned int m_target;
     bool m_hasGoal;
     std::vector<unsigned int> m_path;
     std::vector<unsigned int> m_historyTiles;

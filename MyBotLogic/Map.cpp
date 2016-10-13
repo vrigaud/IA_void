@@ -61,7 +61,6 @@ std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> np
 
 void Map::addGoalTile(unsigned int number)
 {
-    // TODO - Ajout protection car ca pue un peu !!
     if(std::find(begin(m_goalTiles), end(m_goalTiles), number) == end(m_goalTiles))
     {
         m_goalTiles.push_back(number);
@@ -172,7 +171,7 @@ bool Map::canMoveOnTile(unsigned int a_x, unsigned int a_y)
     return !(getNode(a_x, a_y)->getType() == Node::FORBIDDEN || getNode(a_x, a_y)->getType() == Node::OCCUPIED || getNode(a_x, a_y)->getType() == Node::NONE);
 }
 
-std::vector<unsigned int> Map::getNearInterestingTile(unsigned int a_currentId)
+std::vector<unsigned int> Map::getNearUnVisitedTile(unsigned int a_currentId)
 {
     Node* current = getNode(a_currentId);
     std::vector<unsigned int> v;
@@ -214,7 +213,7 @@ std::vector<unsigned int> Map::getNearInterestingTile(unsigned int a_currentId)
 void Map::testAddTile(std::vector<unsigned int> &v, int x, int y)
 {
     Node *temp = getNode(x, y);
-    if(canMoveOnTile(x, y))
+    if(canMoveOnTile(x, y) && !isVisited(temp->getId()))
     {
         v.push_back(temp->getId());
     }

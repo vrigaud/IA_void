@@ -18,7 +18,8 @@ class Map : Singleton
     unsigned int m_height;
     std::map<unsigned int, Node*> m_nodeMap;
     std::vector<unsigned int> m_goalTiles;
-    std::map<unsigned int, SearchMap*> m_searchMap;
+    std::map<unsigned, bool> m_seenTiles;
+    //std::map<unsigned int, SearchMap*> m_searchMap;
 
 private:
     Map() : m_width(0), m_height(0)
@@ -55,15 +56,47 @@ public:
         m_height = h;
     }
 
+    void addSeenTile(unsigned tileId)
+    {
+        if(m_seenTiles[tileId])
+        {
+            return;
+        }
+        m_seenTiles[tileId] = false;
+    }
+
+    void visitTile(unsigned tileId)
+    {
+        m_seenTiles[tileId] = true;
+    }
+
+    bool isVisited(unsigned tileId)
+    {
+        return m_seenTiles[tileId];
+    }
+
+    std::vector<unsigned> getNonVisitedTile()
+    {
+        std::vector<unsigned> v;
+        for(auto seenTile : m_seenTiles)
+        {
+            if(!seenTile.second)
+            {
+                v.push_back(seenTile.first);
+            }
+        }
+        return v;
+    }
+
     void addGoalTile(unsigned int number);
-    void addSearchMap(unsigned int index, SearchMap* smap)
-    {
-        m_searchMap[index] = smap;
-    }
-    SearchMap* getSearchMap(unsigned int index)
-    {
-        return m_searchMap[index];
-    }
+    //void addSearchMap(unsigned int index, SearchMap* smap)
+    //{
+    //    m_searchMap[index] = smap;
+    //}
+    //SearchMap* getSearchMap(unsigned int index)
+    //{
+    //    return m_searchMap[index];
+    //}
 
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 
@@ -76,7 +109,7 @@ public:
      * Do not add blocked tile (by other npc)
      * And do not add impass tile (5 wall)
      */
-    std::vector<unsigned int> getNearInterestingTile(unsigned int a_currentId);
+    std::vector<unsigned int> getNearUnVisitedTile(unsigned int a_currentId);
 };
 
 #endif // MAP_HEADER

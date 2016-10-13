@@ -1,6 +1,7 @@
 #ifndef NODE_HEADER
 #define NODE_HEADER
 #include <cmath>
+#include "Globals.h"
 
 struct Position
 {
@@ -26,6 +27,7 @@ private:
     Position* m_pos;
     unsigned int m_ID;
     NodeType m_type;
+    unsigned int m_edgesCost[8] = {0};
 public:
     Node() = delete;
     Node(int xVal, int yVal, unsigned int idVal, NodeType typeVal);
@@ -48,6 +50,11 @@ public:
     void setType(NodeType nType)
     {
         m_type = nType;
+    }
+
+    void setEdgeCost(EDirection dir, int value)
+    {
+        m_edgesCost[dir] = value;
     }
 
     unsigned int calculateManathan(const Node* goal) const

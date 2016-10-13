@@ -91,17 +91,30 @@ MyBotLogic::MyBotLogic()
         {
             myMap->setNodeType(tileInfo.tileID, Node::GOAL);
             myMap->addGoalTile(tileInfo.tileID);
+            myMap->addSeenTile(tileInfo.tileID);
         }
         else if(ITisDescriptor != tileInfo.tileAttributes.end())
         {
             myMap->setNodeType(tileInfo.tileID, Node::PATH);
+            myMap->addSeenTile(tileInfo.tileID);
         }
     }
+
+    for(std::pair<unsigned, ObjectInfo> info : _turnInfo.objects)
+    {
+        Node* node = myMap->getNode(info.second.tileID);
+        for(int i = N; i < NW; ++i)
+        {
+            node->setEdgeCost(static_cast<EDirection>(i), info.second.edgesCost[i]);
+        }
+    }
+
     std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
     // Calcul path for npc and set goal tile
     for(std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
     {
         Npc* myNpc = m_npcs[curNpc.first];
+        myMap->visitTile(myNpc->getCurrentTileId());
         if(!myNpc->hasGoal() && goalMap.find(curNpc.second.npcID) != end(goalMap))
         {
             unsigned int goalTile = goalMap[curNpc.second.npcID];

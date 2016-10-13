@@ -92,14 +92,6 @@ std::vector<unsigned int> SearchMap::search()
             prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
             prepareNode(current->getX() + 1, current->getY() + 1, current->getG() + 10, current);
         }
-
-        for (int i = 0; i < openList.size(); i++)
-        {
-            if (current->getId() == openList[i]->getId())
-            {
-                openList.erase(openList.begin() + i);
-            }
-        }
     }
 }
 

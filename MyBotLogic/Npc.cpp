@@ -146,26 +146,37 @@ void Npc::explore()
         return;
     }
 
-    std::vector<unsigned int> v = Map::get()->getNearInterestingTile(getCurrentTileId());
+    std::vector<unsigned int> v = Map::get()->getNearUnVisitedTile(getCurrentTileId());
 
-    unsigned int tileId = v[0];
-
-    for(unsigned int i : v)
+    if(v.size() <= 0)
     {
-        auto it = std::find(begin(m_historyTiles), end(m_historyTiles), i);
-        if(it == end(m_historyTiles))
+        std::vector<unsigned> NonVisitedTiles = Map::get()->getNonVisitedTile();
+        for(unsigned index : NonVisitedTiles)
         {
-            tileId = i;
-            break;
+            std::vector<unsigned> temp = Map::get()->getNpcPath(getCurrentTileId(), index);
+            if(!temp.empty())
+            {
+                m_path = temp;
+                m_target = index;
+                m_nextState = MOVING;
+                break;
+            }
         }
     }
+    else
+    {
+        unsigned int tileId = v[0];
 
-    m_path = {tileId, getCurrentTileId()};
-    m_historyTiles.push_back(tileId);
-    m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
-    BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(tileId), true);
+        m_path = {tileId, getCurrentTileId()};
+        m_historyTiles.push_back(tileId);
 
-    m_nextState = EXPLORING;
+        m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+        Map::get()->visitTile(tileId);
+
+        BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(tileId), true);
+
+        m_nextState = EXPLORING;
+    }
 }
 
 void Npc::followPath()
@@ -177,7 +188,13 @@ void Npc::followPath()
         m_nextState = ARRIVED;
         return;
     }
+    if(getCurrentTileId() == m_target && !hasGoal())
+    {
+        m_nextState = EXPLORING;
+        return;
+    }
     m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    Map::get()->visitTile(getNextPathTile());
     BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(getNextPathTile()), true);
     m_nextState = MOVING;
 }
