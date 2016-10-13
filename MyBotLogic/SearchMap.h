@@ -40,14 +40,13 @@ public:
         m_goal = n;
     }
     int getNextPathTile();
-    int getNextPathTileAndErase();
     void FindAnotherPath();
     bool checkPathIntegrity();
     bool isPathFinished() const
     {
         return m_isPathFinished;
     }
-    unsigned int pathSize()
+    unsigned int pathSize() const
     {
         return m_pathToGoal.size();
     };

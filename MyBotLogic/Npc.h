@@ -35,6 +35,7 @@ private:
     unsigned int m_goal;
     bool m_hasGoal;
     std::vector<unsigned int> m_path;
+    std::vector<unsigned int> m_historyTiles;
     std::vector<Action*> m_nextActions;
     Logger m_logger;
 
@@ -80,6 +81,7 @@ public:
     
     void setGoal(unsigned int a_id)
     {
+        BOT_LOGIC_NPC_LOG(m_logger, "FollowPath" + std::to_string(a_id), true);
         m_goal = a_id;
         m_hasGoal = true;
     }

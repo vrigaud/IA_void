@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include "Singleton.h"
+#include "NPCInfo.h"
 
 class SearchMap;
 class TileInfo;
@@ -24,12 +25,13 @@ private:
     {}
     float calculateDistance(int start, int end);
     std::string getStringDirection(unsigned int, unsigned int);
+    void testAddTile(std::vector<unsigned>& v, int x, int y);
 public:
     void setNodeType(unsigned int, Node::NodeType);
     void createNode(Node*);
     Node* getNode(unsigned int, unsigned int);
     Node* getNode(unsigned int);
-    unsigned int getBestGoalTile(int start);
+    std::map<unsigned, unsigned> getBestGoalTile(std::map<unsigned, NPCInfo> npcInfo);
     EDirection getNextDirection(unsigned int a_start, unsigned int a_end);
     static Map *get() noexcept
     {
@@ -53,10 +55,7 @@ public:
         m_height = h;
     }
 
-    void addGoalTile(unsigned int number)
-    {
-        m_goalTiles.push_back(number);
-    }
+    void addGoalTile(unsigned int number);
     void addSearchMap(unsigned int index, SearchMap* smap)
     {
         m_searchMap[index] = smap;
@@ -66,11 +65,10 @@ public:
         return m_searchMap[index];
     }
 
-    // TODO - Return the npc path
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 
-    // TODO - Check if a tile is forbidden
-    bool isFordibben(unsigned int a_tileId);
+    bool canMoveOnTile(unsigned int a_tileId);
+    bool canMoveOnTile(unsigned int a_x, unsigned int a_y);
 
     // TODO - Return all interesting node near one tile as vector
     /*
@@ -78,8 +76,7 @@ public:
      * Do not add blocked tile (by other npc)
      * And do not add impass tile (5 wall)
      */
-    std::vector<unsigned int> getNearInterestingTile(unsigned int a_id);
-
+    std::vector<unsigned int> getNearInterestingTile(unsigned int a_currentId);
 };
 
 #endif // MAP_HEADER

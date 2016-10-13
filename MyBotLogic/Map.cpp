@@ -1,6 +1,7 @@
 #include "Map.h"
 #include "TurnInfo.h"
 #include "SearchMap.h"
+#include "NPCInfo.h"
 
 Map Map::m_instance;
 
@@ -34,22 +35,37 @@ float Map::calculateDistance(int indexStart, int indexEnd)
     return abs(x) + abs(y);
 }
 
-unsigned int Map::getBestGoalTile(int start)
+std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> npcInfo)
 {
-    float bestDistance = 999999.0f;
-    int index = -1;
-    for(int i = 0; i < m_goalTiles.size(); i++)
+    std::map<unsigned, unsigned> goalMap;
+    for(unsigned goal : m_goalTiles)
     {
-        float distance = calculateDistance(start, m_goalTiles[i]);
-        if(distance < bestDistance)
+        int bestDist = 666;
+        int npcId = -1;
+        for(std::pair<unsigned, NPCInfo> npc : npcInfo)
         {
-            index = i;
-            bestDistance = distance;
+            float distance = calculateDistance(npc.second.tileID, goal);
+            if(distance < bestDist)
+            {
+                npcId = npc.second.npcID;
+                bestDist = distance;
+            }
         }
+        goalMap[npcId] = goal;
+        npcInfo.erase(npcId);
     }
-    int goalIndex = m_goalTiles[index];
-    m_goalTiles.erase(m_goalTiles.begin() + index);
-    return goalIndex;
+
+    return goalMap;
+}
+
+
+void Map::addGoalTile(unsigned int number)
+{
+    // TODO - Ajout protection car ca pue un peu !!
+    if(std::find(begin(m_goalTiles), end(m_goalTiles), number) == end(m_goalTiles))
+    {
+        m_goalTiles.push_back(number);
+    }
 }
 
 EDirection Map::getNextDirection(unsigned int a_start, unsigned int a_end)
@@ -139,11 +155,67 @@ std::string Map::getStringDirection(unsigned int start, unsigned int end)
 
 std::vector<unsigned int> Map::getNpcPath(unsigned int a_start, unsigned int a_end)
 {
-    SearchMap mySearch{ getNode(a_start), getNode(a_end)};
+    SearchMap mySearch{getNode(a_start), getNode(a_end)};
     return mySearch.search();
 }
 
-bool Map::isFordibben(unsigned int a_tileId)
+bool Map::canMoveOnTile(unsigned int a_tileId)
 {
-    return getNode(a_tileId)->getType() == Node::FORBIDDEN;
+    return !(getNode(a_tileId)->getType() == Node::FORBIDDEN || getNode(a_tileId)->getType() == Node::OCCUPIED || getNode(a_tileId)->getType() == Node::NONE);
+}
+bool Map::canMoveOnTile(unsigned int a_x, unsigned int a_y)
+{
+    if(a_x < 0 || a_x > m_width - 1 || a_y < 0 || a_y > m_height - 1)
+    {
+        return false;
+    }
+    return !(getNode(a_x, a_y)->getType() == Node::FORBIDDEN || getNode(a_x, a_y)->getType() == Node::OCCUPIED || getNode(a_x, a_y)->getType() == Node::NONE);
+}
+
+std::vector<unsigned int> Map::getNearInterestingTile(unsigned int a_currentId)
+{
+    Node* current = getNode(a_currentId);
+    std::vector<unsigned int> v;
+
+    if(current->getPosition()->y % 2 == 0)
+    {
+        // UP Left
+        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y - 1);
+        // UP Right
+        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
+        // MIDDLE Right
+        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
+        // BOTTOM Right
+        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
+        // BOTTOM Left
+        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y + 1);
+        // MIDDLE left
+        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
+    }
+    else
+    {
+        // UP Left
+        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
+        // UP Right
+        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y - 1);
+        // MIDDLE Right
+        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
+        // BOTTOM Right
+        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y + 1);
+        // BOTTOM Left
+        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
+        // MIDDLE left
+        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
+    }
+
+    return v;
+}
+
+void Map::testAddTile(std::vector<unsigned int> &v, int x, int y)
+{
+    Node *temp = getNode(x, y);
+    if(canMoveOnTile(x, y))
+    {
+        v.push_back(temp->getId());
+    }
 }

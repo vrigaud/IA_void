@@ -8,7 +8,7 @@
 
 
 Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
-    : m_currentState{ NONE }, m_nextState{ EXPLORING }, m_id{ a_id }, m_goal{}, m_hasGoal{ false }, m_path{ a_tileId }, m_nextActions{}
+    : m_currentState{NONE}, m_nextState{EXPLORING}, m_id{a_id}, m_goal{}, m_hasGoal{false}, m_path{a_tileId}, m_nextActions{}, m_historyTiles{a_tileId}
 {
 #ifdef BOT_LOGIC_DEBUG_NPC
     m_logger.Init(a_path, "Npc_" + std::to_string(m_id) + ".log");
@@ -24,34 +24,33 @@ void Npc::update()
     do
     {
         m_currentState = m_nextState;
-        // TODO - Change State to another
-        switch (m_currentState)
+        switch(m_currentState)
         {
-        case(MOVING):
-            followPath();
-            break;
-        case(WAITING):
-            wait();
-            break;
-        case(EXPLORING):
-            explore();
-            break;
-        case(INTERACTING):
-            interact();
-            break;
-        case(ARRIVED):
-            m_nextState = ARRIVED; // May be useless atm
-            m_currentState = ARRIVED;
-            break;
+            case(MOVING):
+                followPath();
+                break;
+            case(WAITING):
+                wait();
+                break;
+            case(EXPLORING):
+                explore();
+                break;
+            case(INTERACTING):
+                interact();
+                break;
+            case(ARRIVED):
+                m_nextState = ARRIVED; // May be useless atm
+                m_currentState = ARRIVED;
+                break;
         }
-    } while (m_currentState != m_nextState);
+    } while(m_currentState != m_nextState);
     int test = 0;
 }
 
 bool Npc::stopEverything()
 {
     // deleting item
-    for (std::vector< Action* >::iterator it = m_nextActions.begin(); it != m_nextActions.end(); ++it)
+    for(std::vector< Action* >::iterator it = m_nextActions.begin(); it != m_nextActions.end(); ++it)
     {
         delete (*it);
     }
@@ -62,10 +61,10 @@ bool Npc::stopEverything()
 void Npc::stopMoving()
 {
     auto it = std::partition(std::begin(m_nextActions),
-        std::end(m_nextActions),
-        [](const Action* curAction) { return curAction->actionType != Action_Move;});
+                             std::end(m_nextActions),
+                             [](const Action* curAction) { return curAction->actionType != Action_Move; });
 
-    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    for(std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
     {
         delete (*itDelete);
     }
@@ -75,10 +74,10 @@ void Npc::stopMoving()
 void Npc::stopInteract()
 {
     auto it = std::partition(std::begin(m_nextActions),
-        std::end(m_nextActions),
-        [](const Action* curAction) { return curAction->actionType == Action_Interact;});
+                             std::end(m_nextActions),
+                             [](const Action* curAction) { return curAction->actionType == Action_Interact; });
 
-    for (std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
+    for(std::vector< Action* >::iterator itDelete = it; itDelete != m_nextActions.end(); ++itDelete)
     {
         delete (*itDelete);
     }
@@ -87,20 +86,20 @@ void Npc::stopInteract()
 
 void Npc::unstackActions()
 {
-    while (m_nextActions.size()) 
+    while(m_nextActions.size())
     {
-        Action* curAction{ m_nextActions.back() };
-        switch (curAction->actionType)
+        Action* curAction{m_nextActions.back()};
+        switch(curAction->actionType)
         {
-        case Action_None:
-            // Do nothing
-            break;
-        case Action_Move:
-            moveForwardOnPath();
-            break;
-        case Action_Interact:
-            // TODO - do nothing atm
-            break;
+            case Action_None:
+                // Do nothing
+                break;
+            case Action_Move:
+                moveForwardOnPath();
+                break;
+            case Action_Interact:
+                // TODO - do nothing atm
+                break;
         }
         m_nextActions.pop_back();
     }
@@ -108,7 +107,7 @@ void Npc::unstackActions()
 
 void Npc::calculPath()
 {
-    if (!hasGoal())
+    if(!hasGoal())
     {
         return;
     }
@@ -117,10 +116,9 @@ void Npc::calculPath()
 
 bool Npc::updatePath()
 {
-    // TODO - check path integrity and update if needed.
-    for (unsigned int tileId : m_path)
+    for(unsigned int tileId : m_path)
     {
-        if (Map::get()->isFordibben(tileId))
+        if(!Map::get()->canMoveOnTile(tileId))
         {
             m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
             return true;
@@ -131,7 +129,7 @@ bool Npc::updatePath()
 
 int Npc::getNextPathTile() const
 {
-    if (m_path.size() == 1)
+    if(m_path.size() == 1)
     {
         return -1;
     }
@@ -141,39 +139,57 @@ int Npc::getNextPathTile() const
 
 void Npc::explore()
 {
-    // TODO - explore the map with a lot of efficiency
-    if (hasGoal())
+    BOT_LOGIC_NPC_LOG(m_logger, "Explore", true);
+    if(hasGoal())
     {
         m_nextState = MOVING;
         return;
     }
 
-    // Ask map for potential direction
+    std::vector<unsigned int> v = Map::get()->getNearInterestingTile(getCurrentTileId());
 
-    // Choose a direction
+    unsigned int tileId = v[0];
 
-    // Update next action in the vector
+    for(unsigned int i : v)
+    {
+        auto it = std::find(begin(m_historyTiles), end(m_historyTiles), i);
+        if(it == end(m_historyTiles))
+        {
+            tileId = i;
+            break;
+        }
+    }
+
+    m_path = {tileId, getCurrentTileId()};
+    m_historyTiles.push_back(tileId);
+    m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(tileId), true);
+
+    m_nextState = EXPLORING;
 }
 
 void Npc::followPath()
 {
-    // TODO - follow the path
+    BOT_LOGIC_NPC_LOG(m_logger, "FollowPath", true);
     // Get the direction between the two last nodes of m_path
-    if (getCurrentTileId() == m_goal)
+    if(getCurrentTileId() == m_goal)
     {
         m_nextState = ARRIVED;
         return;
     }
-    m_nextActions.push_back( new Move{ m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
+    BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(getNextPathTile()), true);
     m_nextState = MOVING;
 }
 
 void Npc::wait()
 {
+    BOT_LOGIC_NPC_LOG(m_logger, "wait", true);
     // TODO - Test why we are blocked ?
 }
 
 void Npc::interact()
 {
+    BOT_LOGIC_NPC_LOG(m_logger, "interact", true);
     // TODO - interact with some fancy stuff
 }

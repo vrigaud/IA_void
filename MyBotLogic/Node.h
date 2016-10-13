@@ -19,6 +19,7 @@ public:
         NONE,
         FORBIDDEN,
         GOAL,
+        OCCUPIED,
         PATH,
     };
 private:
