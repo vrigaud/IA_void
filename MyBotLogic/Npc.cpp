@@ -8,7 +8,7 @@
 
 
 Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
-    : m_currentState{NONE}, m_nextState{EXPLORING}, m_id{a_id}, m_goal{}, m_hasGoal{false}, m_path{a_tileId}, m_nextActions{}, m_historyTiles{a_tileId}
+    : m_currentState{NONE}, m_nextState{EXPLORING}, m_id{a_id}, m_goal{}, m_hasGoal{false}, m_path{a_tileId}, m_nextActions{}, m_historyTiles{a_tileId}, m_turnCount{0}
 {
 #ifdef BOT_LOGIC_DEBUG_NPC
     m_logger.Init(a_path, "Npc_" + std::to_string(m_id) + ".log");
@@ -20,6 +20,8 @@ Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
 
 void Npc::update()
 {
+    ++m_turnCount;
+    BOT_LOGIC_NPC_LOG(m_logger, "\nTurn #" + std::to_string(m_turnCount) + "\nCurrent Tile : " + std::to_string(getCurrentTileId()), true);
     updatePath();
     do
     {
@@ -112,15 +114,20 @@ void Npc::calculPath()
         return;
     }
     m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+    DisplayVector("Npc path :", m_path);
 }
 
 bool Npc::updatePath()
 {
-    for(unsigned int tileId : m_path)
+    std::vector<unsigned> reversePath;
+    reversePath.resize(m_path.size());
+    std::reverse_copy(begin(m_path), end(m_path), begin(reversePath));
+    for(unsigned int tileId : reversePath)
     {
-        if(!Map::get()->canMoveOnTile(tileId))
+        if(!Map::get()->canMoveOnTile(getCurrentTileId(), tileId))
         {
             m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
+            DisplayVector("Path Updated : ", m_path);
             return true;
         }
     }
@@ -209,4 +216,15 @@ void Npc::interact()
 {
     BOT_LOGIC_NPC_LOG(m_logger, "interact", true);
     // TODO - interact with some fancy stuff
+}
+
+template<class T>
+void Npc::DisplayVector(std::string info, const std::vector<T> v)
+{
+    std::string s{""};
+    for(T u : v)
+    {
+        s += std::to_string(u) + " ";
+    }
+    BOT_LOGIC_NPC_LOG(m_logger, info + s, true);
 }

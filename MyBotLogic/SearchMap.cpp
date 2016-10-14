@@ -2,57 +2,10 @@
 #include "Map.h"
 #include "SearchNode.h"
 
-void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* parent)
-{
-    Map* myMap = Map::get();
-    if(x < 0 || x > myMap->getWidth() - 1 || y < 0 || y > myMap->getHeight() - 1)
-    {
-        return;
-    }
-    auto nodeType = myMap->getNode(x, y)->getType();
-    if(nodeType == Node::FORBIDDEN || nodeType == Node::NONE)
-    {
-        return;
-    }
-
-    int id = myMap->getWidth() * y + x;
-
-    for(int i = 0; i < closedList.size(); i++)
-    {
-        if(id == closedList[i]->getId())
-        {
-            return;
-        }
-    }
-
-    SearchNode* node = new SearchNode(x, y, id, parent);
-    node->setG(newGValue);
-    node->setH(calculateManathan(node, m_goal));
-
-    for(int i = 0; i < openList.size(); i++)
-    {
-        if(id == openList[i]->getId())
-        {
-            if(node->getF() < openList[i]->getF())
-            {
-                openList[i]->setG(newGValue);
-                openList[i]->setParent(parent);
-            }
-            else
-            {
-                delete node;
-                return;
-            }
-        }
-    }
-
-    openList.push_back(node);
-}
-
 void SearchMap::prepareNode(Node* refNode, unsigned int newGValue, SearchNode* parent)
 {
     auto nodeType = refNode->getType();
-    if (nodeType == Node::FORBIDDEN || nodeType == Node::NONE)
+    if (nodeType == Node::FORBIDDEN)
     {
         return;
     }
@@ -90,50 +43,30 @@ std::vector<unsigned int> SearchMap::search()
             return std::vector<unsigned int>{};
         }
 
-        SearchNode* current = getNextNodeToSearch();
+        SearchNode* currentSearchNode = getNextNodeToSearch();
+        Node* currentNode = Map::get()->getNode(currentSearchNode->getId());
 
-        if (current->getId() == m_goal->getId())
+        if (currentSearchNode->getId() == m_goal->getId())
         {
             SearchNode* getPath;
-            for (getPath = current; getPath != nullptr; getPath = getPath->getParent())
+            for (getPath = currentSearchNode; getPath != nullptr; getPath = getPath->getParent())
             {
                 m_pathToGoal.push_back(getPath->getId());
             }
             m_isGoalFound = true;
             return m_pathToGoal;
         }
-        // TODO - Check for bug here
+
         for (int i = N; i <= NW; ++i)
         {
-            Node* tempNode = Map::get()->getNode(current->getId())->getNeighboor(static_cast<EDirection>(i));
-            if (tempNode != nullptr)
+            EDirection dir = static_cast<EDirection>(i);
+            EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+            Node* tempNode = currentNode->getNeighboor(dir);
+            if (tempNode != nullptr && (!currentNode->isEdgeBlocked(dir) && !tempNode->isEdgeBlocked(invDir)))
             {
-                prepareNode(tempNode, current->getG() + 10, current);
+                prepareNode(tempNode, currentSearchNode->getG() + 10, currentSearchNode);
             }
         }
-
-        /*if (current->getY() % 2 == 0)
-        {
-            prepareNode(current->getX() - 1, current->getY() - 1, current->getG() + 10, current);
-            prepareNode(current->getX(), current->getY() - 1, current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY(), current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY(), current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY() + 1, current->getG() + 10, current);
-            prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
-        }
-        else
-        {
-            prepareNode(current->getX(), current->getY() - 1, current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY() - 1, current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY(), current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY(), current->getG() + 10, current);
-
-            prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY() + 1, current->getG() + 10, current);
-        }*/
     }
 }
 
@@ -175,7 +108,7 @@ void SearchMap::initSearchMap(Node* start, Node* goal)
 
 SearchNode* SearchMap::getNextNodeToSearch()
 {
-    unsigned int bestF = 99999;
+    unsigned int bestF = 9999999;
     int index = -1;
     SearchNode* nextNode = nullptr;
 
