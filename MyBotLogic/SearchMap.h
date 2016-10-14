@@ -28,6 +28,7 @@ public:
     }
     void initSearchMap(Node*, Node*);
     void prepareNode(int, int, unsigned int, SearchNode*);
+    void prepareNode(Node*, unsigned int, SearchNode*);
     std::vector<unsigned int> search();
     SearchNode* getNextNodeToSearch();
     unsigned int calculateManathan(const SearchNode* start, const SearchNode* goal) const;
@@ -40,14 +41,13 @@ public:
         m_goal = n;
     }
     int getNextPathTile();
-    int getNextPathTileAndErase();
     void FindAnotherPath();
     bool checkPathIntegrity();
     bool isPathFinished() const
     {
         return m_isPathFinished;
     }
-    unsigned int pathSize()
+    unsigned int pathSize() const
     {
         return m_pathToGoal.size();
     };

@@ -54,6 +54,8 @@ MyBotLogic::MyBotLogic()
         }
     }
 
+    myMap->connectNodes();
+
     // Init npcs
     BOT_LOGIC_LOG(mLogger, "init npcs", true);
     for(std::pair<unsigned int, NPCInfo> curNpcs : _levelInfo.npcs)
@@ -91,20 +93,37 @@ MyBotLogic::MyBotLogic()
         {
             myMap->setNodeType(tileInfo.tileID, Node::GOAL);
             myMap->addGoalTile(tileInfo.tileID);
+            myMap->addSeenTile(tileInfo.tileID);
         }
-        else if (ITisDescriptor != tileInfo.tileAttributes.end())
+        else if(ITisDescriptor != tileInfo.tileAttributes.end())
         {
             myMap->setNodeType(tileInfo.tileID, Node::PATH);
+            myMap->addSeenTile(tileInfo.tileID);
+        }
+    }
+    BOT_LOGIC_LOG(mLogger, "Update Edges", true);
+    for(std::pair<unsigned, ObjectInfo> info : _turnInfo.objects)
+    {
+        Node* node = myMap->getNode(info.second.tileID);
+        for(int i = N; i <= NW; ++i)
+        {
+            if(info.second.edgesCost[i] == 0)
+            {
+                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i), true);
+                node->setEdgeCost(static_cast<EDirection>(i), 0);
+            }
         }
     }
 
+    std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
     // Calcul path for npc and set goal tile
-    for (std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
+    for(std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
     {
         Npc* myNpc = m_npcs[curNpc.first];
-        if (!myNpc->hasGoal())
+        myMap->visitTile(myNpc->getCurrentTileId());
+        if(!myNpc->hasGoal() && goalMap.find(curNpc.second.npcID) != end(goalMap))
         {
-            unsigned int goalTile = myMap->getBestGoalTile(curNpc.second.tileID);
+            unsigned int goalTile = goalMap[curNpc.second.npcID];
             myNpc->setGoal(goalTile);
         }
         myNpc->calculPath();
@@ -122,24 +141,24 @@ MyBotLogic::MyBotLogic()
         // Get next npc tile
         int nextNpcTile = myNpc->getNextPathTile();
 
-        if (nextNpcTile > 0)
+        if(nextNpcTile > 0)
         {
             // check if npc can move on nextTile
-            for (std::pair<unsigned int, Npc*> curP : m_npcs)
+            for(std::pair<unsigned int, Npc*> curP : m_npcs)
             {
-                
-                if (curP.first != myNpc->getId()
-                    && curP.second->getNextPathTile() == nextNpcTile)
+
+                if(curP.first != myNpc->getId()
+                   && curP.second->getNextPathTile() == nextNpcTile)
                 {
                     // Handle
-                    if (myNpc->getPathSize() < curP.second->getPathSize())
+                    if(myNpc->getPathSize() < curP.second->getPathSize())
                     {
                         myNpc->stopMoving();
                         break;
                     }
                     // else prioritize by npcs id
-                    if (curP.first < myNpc->getId()
-                        && myNpc->getPathSize() == curP.second->getPathSize())
+                    if(curP.first < myNpc->getId()
+                       && myNpc->getPathSize() == curP.second->getPathSize())
                     {
                         myNpc->stopMoving();
                         break;
@@ -147,21 +166,21 @@ MyBotLogic::MyBotLogic()
                 }
             }
             // copy npc's action list into the action list
-            for (Action* curAction : myNpc->getActions())
+            for(Action* curAction : myNpc->getActions())
             {
                 _actionList.push_back(curAction->Clone());
             }
 
-            if (myNpc->getNextPathTile() < 0)
+            if(myNpc->getNextPathTile() < 0)
             {
                 // If it's -1, this NPC finished his path
-                myMap->setNodeType(nextNpcTile, Node::FORBIDDEN);
+                myMap->setNodeType(nextNpcTile, Node::OCCUPIED);
             }
         }
     }
     std::for_each(begin(m_npcs),
-        end(m_npcs), 
-        [](std::pair<unsigned int, Npc*> myNpc) {myNpc.second->unstackActions();});
+                  end(m_npcs),
+                  [](std::pair<unsigned int, Npc*> myNpc) {myNpc.second->unstackActions(); });
 }
 
 /*virtual*/ void MyBotLogic::Exit()

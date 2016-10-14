@@ -33,8 +33,11 @@ private:
     npcState m_currentState, m_nextState;
     unsigned int m_id;
     unsigned int m_goal;
+    unsigned int m_target;
+    unsigned int m_turnCount;
     bool m_hasGoal;
     std::vector<unsigned int> m_path;
+    std::vector<unsigned int> m_historyTiles;
     std::vector<Action*> m_nextActions;
     Logger m_logger;
 
@@ -64,6 +67,10 @@ public:
     void calculPath();
     // check path integrity, if pass is corrupted, try to find a new path return true if found
     bool updatePath();
+
+    template<class T>
+    void DisplayVector(std::string, const std::vector<T>);
+
     unsigned int getCurrentTileId()
     {
         return m_path.back();
@@ -80,6 +87,7 @@ public:
     
     void setGoal(unsigned int a_id)
     {
+        BOT_LOGIC_NPC_LOG(m_logger, "Set NPC goal " + std::to_string(a_id), true);
         m_goal = a_id;
         m_hasGoal = true;
     }
