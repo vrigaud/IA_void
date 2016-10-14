@@ -54,6 +54,8 @@ MyBotLogic::MyBotLogic()
         }
     }
 
+    myMap->connectNodes();
+
     // Init npcs
     BOT_LOGIC_LOG(mLogger, "init npcs", true);
     for(std::pair<unsigned int, NPCInfo> curNpcs : _levelInfo.npcs)
@@ -99,13 +101,17 @@ MyBotLogic::MyBotLogic()
             myMap->addSeenTile(tileInfo.tileID);
         }
     }
-
+    BOT_LOGIC_LOG(mLogger, "Update Edges", true);
     for(std::pair<unsigned, ObjectInfo> info : _turnInfo.objects)
     {
         Node* node = myMap->getNode(info.second.tileID);
-        for(int i = N; i < NW; ++i)
+        for(int i = N; i <= NW; ++i)
         {
-            node->setEdgeCost(static_cast<EDirection>(i), info.second.edgesCost[i]);
+            if(info.second.edgesCost[i] == 0)
+            {
+                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i), true);
+                node->setEdgeCost(static_cast<EDirection>(i), 0);
+            }
         }
     }
 

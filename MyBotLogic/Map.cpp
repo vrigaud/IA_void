@@ -15,8 +15,50 @@ void Map::createNode(Node* node)
     m_nodeMap[node->getId()] = node;
 }
 
+void Map::connectNodes()
+{
+    for(std::pair<unsigned int, Node*> curNode : m_nodeMap)
+    {
+        // connecting
+        Node* nw;
+        Node* ne;
+        Node* e;
+        Node* se;
+        Node* sw;
+        Node* w;
+        if(curNode.second->getPosition()->y % 2 == 0)
+        {
+            nw = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y - 1);
+            ne = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y - 1);
+            e = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y);
+            se = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y + 1);
+            sw = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y + 1);
+            w = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y);
+        }
+        else
+        {
+            nw = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y - 1);
+            ne = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y - 1);
+            e = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y);
+            se = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y + 1);
+            sw = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y + 1);
+            w = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y);
+        }
+        curNode.second->setNeighboor(NW, nw);
+        curNode.second->setNeighboor(NE, ne);
+        curNode.second->setNeighboor(E, e);
+        curNode.second->setNeighboor(SE, se);
+        curNode.second->setNeighboor(SW, sw);
+        curNode.second->setNeighboor(W, w);
+    }
+}
+
 Node* Map::getNode(unsigned int x, unsigned int y)
 {
+    if(x < 0 || x > getWidth() - 1 || y < 0 || y > getHeight() - 1)
+    {
+        return nullptr;
+    }
     unsigned int index = x + y * m_width;
     return m_nodeMap[index];
 }
@@ -38,22 +80,50 @@ float Map::calculateDistance(int indexStart, int indexEnd)
 std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> npcInfo)
 {
     std::map<unsigned, unsigned> goalMap;
-    for(unsigned goal : m_goalTiles)
+    if(m_goalTiles.size() > npcInfo.size())
     {
-        int bestDist = 666;
-        int npcId = -1;
+        auto copyMapGoal = m_goalTiles;
         for(std::pair<unsigned, NPCInfo> npc : npcInfo)
         {
-            float distance = calculateDistance(npc.second.tileID, goal);
-            if(distance < bestDist)
+            int bestDist = 666;
+            unsigned goalId = -1;
+            std::vector<unsigned>::iterator goalIt = begin(copyMapGoal);
+            for(; goalIt != end(copyMapGoal); ++goalIt)
             {
-                npcId = npc.second.npcID;
-                bestDist = distance;
+                float distance = calculateDistance(npc.second.tileID, *goalIt);
+                if(distance < bestDist)
+                {
+                    goalId = *goalIt;
+                    bestDist = distance;
+                }
             }
+            goalMap[npc.second.npcID] = goalId;
+            copyMapGoal.erase(std::find(begin(copyMapGoal), end(copyMapGoal), goalId));
         }
-        goalMap[npcId] = goal;
-        npcInfo.erase(npcId);
     }
+    else
+    {
+        for(unsigned goal : m_goalTiles)
+        {
+            if(npcInfo.size() <= 0)
+            {
+                break;
+            }
+            int bestDist = 666;
+            int npcId = -1;
+            for(std::pair<unsigned, NPCInfo> npc : npcInfo)
+            {
+                float distance = calculateDistance(npc.second.tileID, goal);
+                if(distance < bestDist)
+                {
+                    npcId = npc.second.npcID;
+                    bestDist = distance;
+                }
+            }
+            goalMap[npcId] = goal;
+            npcInfo.erase(npcId);
+        }
+    }    
 
     return goalMap;
 }
@@ -158,17 +228,17 @@ std::vector<unsigned int> Map::getNpcPath(unsigned int a_start, unsigned int a_e
     return mySearch.search();
 }
 
-bool Map::canMoveOnTile(unsigned int a_tileId)
+bool Map::canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId)
 {
-    return !(getNode(a_tileId)->getType() == Node::FORBIDDEN || getNode(a_tileId)->getType() == Node::OCCUPIED || getNode(a_tileId)->getType() == Node::NONE);
-}
-bool Map::canMoveOnTile(unsigned int a_x, unsigned int a_y)
-{
-    if(a_x < 0 || a_x > m_width - 1 || a_y < 0 || a_y > m_height - 1)
+    if(a_fromTileId == a_toTileId)
     {
-        return false;
+        return true;
     }
-    return !(getNode(a_x, a_y)->getType() == Node::FORBIDDEN || getNode(a_x, a_y)->getType() == Node::OCCUPIED || getNode(a_x, a_y)->getType() == Node::NONE);
+
+    bool isStateOk = !(getNode(a_toTileId)->getType() == Node::FORBIDDEN || getNode(a_toTileId)->getType() == Node::OCCUPIED);
+    EDirection dir = getNextDirection(a_fromTileId, a_toTileId);
+    EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+    return isStateOk && !getNode(a_fromTileId)->isEdgeBlocked(dir) && !getNode(a_toTileId)->isEdgeBlocked(invDir);
 }
 
 std::vector<unsigned int> Map::getNearUnVisitedTile(unsigned int a_currentId)
@@ -176,45 +246,21 @@ std::vector<unsigned int> Map::getNearUnVisitedTile(unsigned int a_currentId)
     Node* current = getNode(a_currentId);
     std::vector<unsigned int> v;
 
-    if(current->getPosition()->y % 2 == 0)
+    for(int i = N; i <= NW; ++i)
     {
-        // UP Left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y - 1);
-        // UP Right
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
-        // MIDDLE Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
-        // BOTTOM Right
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
-        // BOTTOM Left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y + 1);
-        // MIDDLE left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
-    }
-    else
-    {
-        // UP Left
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
-        // UP Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y - 1);
-        // MIDDLE Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
-        // BOTTOM Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y + 1);
-        // BOTTOM Left
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
-        // MIDDLE left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
+        if(current->getNeighboor(static_cast<EDirection>(i)))
+        {
+            testAddTile(v, current->getId(), current->getNeighboor(static_cast<EDirection>(i))->getId());
+        }
     }
 
     return v;
 }
 
-void Map::testAddTile(std::vector<unsigned int> &v, int x, int y)
+void Map::testAddTile(std::vector<unsigned int>& v, unsigned int fromTileId, unsigned int toTileId)
 {
-    Node *temp = getNode(x, y);
-    if(canMoveOnTile(x, y) && !isVisited(temp->getId()))
+    if(canMoveOnTile(fromTileId, toTileId) && !isVisited(toTileId))
     {
-        v.push_back(temp->getId());
+        v.push_back(toTileId);
     }
 }

@@ -26,10 +26,12 @@ private:
     {}
     float calculateDistance(int start, int end);
     std::string getStringDirection(unsigned int, unsigned int);
-    void testAddTile(std::vector<unsigned>& v, int x, int y);
+    void testAddTile(std::vector<unsigned>& v, unsigned int, unsigned int tileId);
 public:
     void setNodeType(unsigned int, Node::NodeType);
     void createNode(Node*);
+    // TODO - connect all node with all theses neighboors
+    void connectNodes();
     Node* getNode(unsigned int, unsigned int);
     Node* getNode(unsigned int);
     std::map<unsigned, unsigned> getBestGoalTile(std::map<unsigned, NPCInfo> npcInfo);
@@ -100,8 +102,7 @@ public:
 
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 
-    bool canMoveOnTile(unsigned int a_tileId);
-    bool canMoveOnTile(unsigned int a_x, unsigned int a_y);
+    bool canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId);
 
     // TODO - Return all interesting node near one tile as vector
     /*

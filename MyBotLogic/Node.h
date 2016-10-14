@@ -27,7 +27,8 @@ private:
     Position* m_pos;
     unsigned int m_ID;
     NodeType m_type;
-    unsigned int m_edgesCost[8] = {0};
+    unsigned int m_edgesCost[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    Node* m_neighboors[8] = {nullptr};
 public:
     Node() = delete;
     Node(int xVal, int yVal, unsigned int idVal, NodeType typeVal);
@@ -55,6 +56,26 @@ public:
     void setEdgeCost(EDirection dir, int value)
     {
         m_edgesCost[dir] = value;
+        //Node* nodeNeighboor = getNeighboor(dir);
+        //if(nodeNeighboor != nullptr)
+        //{
+        //    nodeNeighboor->setEdgeCost(, value);
+        //}
+    }
+
+    bool isEdgeBlocked(EDirection dir) const
+    {
+        return m_edgesCost[dir] == 0 ? true : false;
+    }
+
+    void setNeighboor(EDirection dir, Node* p)
+    {
+        m_neighboors[dir] = p;
+    }
+
+    Node* getNeighboor(EDirection dir)
+    {
+        return m_neighboors[dir];
     }
 
     unsigned int calculateManathan(const Node* goal) const
