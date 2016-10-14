@@ -28,6 +28,7 @@ public:
     }
     void initSearchMap(Node*, Node*);
     void prepareNode(int, int, unsigned int, SearchNode*);
+    void prepareNode(Node*, unsigned int, SearchNode*);
     std::vector<unsigned int> search();
     SearchNode* getNextNodeToSearch();
     unsigned int calculateManathan(const SearchNode* start, const SearchNode* goal) const;

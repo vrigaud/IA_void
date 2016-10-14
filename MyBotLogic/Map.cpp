@@ -15,8 +15,50 @@ void Map::createNode(Node* node)
     m_nodeMap[node->getId()] = node;
 }
 
+void Map::connectNodes()
+{
+    for (std::pair<unsigned int, Node*> curNode : m_nodeMap)
+    {
+        // connecting
+        Node* nw;
+        Node* ne;
+        Node* e;
+        Node* se;
+        Node* sw;
+        Node* w;
+        if (curNode.second->getPosition()->y % 2 == 0)
+        {
+            nw = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y - 1);
+            ne = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y - 1);
+            e = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y);
+            se = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y + 1);
+            sw = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y + 1);
+            w = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y);
+        }
+        else
+        {
+            nw = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y - 1);
+            ne = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y - 1);
+            e = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y);
+            se = getNode(curNode.second->getPosition()->x + 1, curNode.second->getPosition()->y + 1);
+            sw = getNode(curNode.second->getPosition()->x, curNode.second->getPosition()->y + 1);
+            w = getNode(curNode.second->getPosition()->x - 1, curNode.second->getPosition()->y);
+        }
+        curNode.second->setNeighboor(NW, nw);
+        curNode.second->setNeighboor(NE, ne);
+        curNode.second->setNeighboor(E, e);
+        curNode.second->setNeighboor(SE, se);
+        curNode.second->setNeighboor(SW, sw);
+        curNode.second->setNeighboor(W, w);
+    }
+}
+
 Node* Map::getNode(unsigned int x, unsigned int y)
 {
+    if (x < 0 || x > getWidth() - 1 || y < 0 || y > getHeight() - 1)
+    {
+        return nullptr;
+    }
     unsigned int index = x + y * m_width;
     return m_nodeMap[index];
 }
@@ -176,35 +218,12 @@ std::vector<unsigned int> Map::getNearUnVisitedTile(unsigned int a_currentId)
     Node* current = getNode(a_currentId);
     std::vector<unsigned int> v;
 
-    if(current->getPosition()->y % 2 == 0)
+    for (int i = N; i <= NW; ++i)
     {
-        // UP Left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y - 1);
-        // UP Right
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
-        // MIDDLE Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
-        // BOTTOM Right
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
-        // BOTTOM Left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y + 1);
-        // MIDDLE left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
-    }
-    else
-    {
-        // UP Left
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y - 1);
-        // UP Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y - 1);
-        // MIDDLE Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y);
-        // BOTTOM Right
-        testAddTile(v, current->getPosition()->x + 1, current->getPosition()->y + 1);
-        // BOTTOM Left
-        testAddTile(v, current->getPosition()->x, current->getPosition()->y + 1);
-        // MIDDLE left
-        testAddTile(v, current->getPosition()->x - 1, current->getPosition()->y);
+        if (current->getNeighboor(static_cast<EDirection>(i)))
+        {
+            testAddTile(v, current->getNeighboor(static_cast<EDirection>(i))->getId());
+        }
     }
 
     return v;
@@ -216,5 +235,13 @@ void Map::testAddTile(std::vector<unsigned int> &v, int x, int y)
     if(canMoveOnTile(x, y) && !isVisited(temp->getId()))
     {
         v.push_back(temp->getId());
+    }
+}
+
+void Map::testAddTile(std::vector<unsigned int>& v, unsigned int tileId)
+{
+    if (canMoveOnTile(tileId) && !isVisited(tileId))
+    {
+        v.push_back(tileId);
     }
 }

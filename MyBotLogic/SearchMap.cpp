@@ -49,6 +49,38 @@ void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* pa
     openList.push_back(node);
 }
 
+void SearchMap::prepareNode(Node* refNode, unsigned int newGValue, SearchNode* parent)
+{
+    auto nodeType = refNode->getType();
+    if (nodeType == Node::FORBIDDEN || nodeType == Node::NONE)
+    {
+        return;
+    }
+    unsigned int id = refNode->getId();
+    SearchNode* node = new SearchNode(refNode->getPosition()->x, refNode->getPosition()->y, id, parent);
+    node->setG(newGValue);
+    node->setH(calculateManathan(node, m_goal));
+
+    for (int i = 0; i < openList.size(); i++)
+    {
+        if (id == openList[i]->getId())
+        {
+            if (node->getF() < openList[i]->getF())
+            {
+                openList[i]->setG(newGValue);
+                openList[i]->setParent(parent);
+            }
+            else
+            {
+                delete node;
+                return;
+            }
+        }
+    }
+
+    openList.push_back(node);
+}
+
 std::vector<unsigned int> SearchMap::search()
 {
     while (!m_isGoalFound)
@@ -70,7 +102,17 @@ std::vector<unsigned int> SearchMap::search()
             m_isGoalFound = true;
             return m_pathToGoal;
         }
-        if (current->getY() % 2 == 0)
+        // TODO - Check for bug here
+        for (int i = N; i <= NW; ++i)
+        {
+            Node* tempNode = Map::get()->getNode(current->getId());
+            if (tempNode->getNeighboor(static_cast<EDirection>(i)))
+            {
+                prepareNode(tempNode, current->getG() + 10, current);
+            }
+        }
+
+        /*if (current->getY() % 2 == 0)
         {
             prepareNode(current->getX() - 1, current->getY() - 1, current->getG() + 10, current);
             prepareNode(current->getX(), current->getY() - 1, current->getG() + 10, current);
@@ -91,7 +133,7 @@ std::vector<unsigned int> SearchMap::search()
 
             prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
             prepareNode(current->getX() + 1, current->getY() + 1, current->getG() + 10, current);
-        }
+        }*/
     }
 }
 

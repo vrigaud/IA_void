@@ -27,9 +27,12 @@ private:
     float calculateDistance(int start, int end);
     std::string getStringDirection(unsigned int, unsigned int);
     void testAddTile(std::vector<unsigned>& v, int x, int y);
+    void testAddTile(std::vector<unsigned>& v, unsigned int tileId);
 public:
     void setNodeType(unsigned int, Node::NodeType);
     void createNode(Node*);
+    // TODO - connect all node with all theses neighboors
+    void connectNodes();
     Node* getNode(unsigned int, unsigned int);
     Node* getNode(unsigned int);
     std::map<unsigned, unsigned> getBestGoalTile(std::map<unsigned, NPCInfo> npcInfo);

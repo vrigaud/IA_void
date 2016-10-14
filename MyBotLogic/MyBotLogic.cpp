@@ -54,6 +54,8 @@ MyBotLogic::MyBotLogic()
         }
     }
 
+    myMap->connectNodes();
+
     // Init npcs
     BOT_LOGIC_LOG(mLogger, "init npcs", true);
     for(std::pair<unsigned int, NPCInfo> curNpcs : _levelInfo.npcs)
