@@ -105,8 +105,8 @@ std::vector<unsigned int> SearchMap::search()
         // TODO - Check for bug here
         for (int i = N; i <= NW; ++i)
         {
-            Node* tempNode = Map::get()->getNode(current->getId());
-            if (tempNode->getNeighboor(static_cast<EDirection>(i)))
+            Node* tempNode = Map::get()->getNode(current->getId())->getNeighboor(static_cast<EDirection>(i));
+            if (tempNode != nullptr)
             {
                 prepareNode(tempNode, current->getG() + 10, current);
             }
