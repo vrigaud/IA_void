@@ -7,12 +7,26 @@
 #include <vector>
 #include "Singleton.h"
 #include "NPCInfo.h"
+#include "MapLogger.h"
+
+#include "Logger.h"
+
+#ifdef _DEBUG
+#define BOT_LOGIC_DEBUG_MAP
+#endif
+
+#ifdef BOT_LOGIC_DEBUG_MAP
+#define BOT_LOGIC_MAP_LOG(logger, text, autoEndLine) logger.Log(text, autoEndLine)
+#else
+#define BOT_LOGIC_MAP_LOG(logger, text, autoEndLine) 0
+#endif
 
 class SearchMap;
 class TileInfo;
 
 class Map : Singleton
 {
+
     static Map m_instance;
     unsigned int m_width;
     unsigned int m_height;
@@ -21,6 +35,9 @@ class Map : Singleton
     std::map<unsigned, bool> m_seenTiles;
     //std::map<unsigned int, SearchMap*> m_searchMap;
 
+    // Log stuff
+    Logger m_logger;
+
 private:
     Map() : m_width(0), m_height(0)
     {}
@@ -28,6 +45,7 @@ private:
     std::string getStringDirection(unsigned int, unsigned int);
     void testAddTile(std::vector<unsigned>& v, unsigned int, unsigned int tileId);
 public:
+    void setLoggerPath(const std::string &a_path);
     void setNodeType(unsigned int, Node::NodeType);
     void createNode(Node*);
     // TODO - connect all node with all theses neighboors
@@ -104,13 +122,9 @@ public:
 
     bool canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId);
 
-    // TODO - Return all interesting node near one tile as vector
-    /*
-     * Do not add forbidden tile or blocked tile
-     * Do not add blocked tile (by other npc)
-     * And do not add impass tile (5 wall)
-     */
     std::vector<unsigned int> getNearUnVisitedTile(unsigned int a_currentId);
+
+    void logMap(unsigned);
 };
 
 #endif // MAP_HEADER

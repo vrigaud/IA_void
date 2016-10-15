@@ -21,8 +21,9 @@ Npc::Npc(unsigned int a_id, unsigned int a_tileId, std::string a_path)
 void Npc::update()
 {
     ++m_turnCount;
-    BOT_LOGIC_NPC_LOG(m_logger, "\nTurn #" + std::to_string(m_turnCount) + "\nCurrent Tile : " + std::to_string(getCurrentTileId()), true);
+    BOT_LOGIC_NPC_LOG(m_logger, "\nTurn #" + std::to_string(m_turnCount) + "\n\tCurrent Tile : " + std::to_string(getCurrentTileId()), true);
     updatePath();
+    BOT_LOGIC_NPC_LOG(m_logger, "\tEntering State Machine : ", true);
     do
     {
         m_currentState = m_nextState;
@@ -114,23 +115,28 @@ void Npc::calculPath()
         return;
     }
     m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
-    DisplayVector("Npc path :", m_path);
+    DisplayVector("\tNpc base path :", m_path);
 }
 
 bool Npc::updatePath()
 {
+    BOT_LOGIC_NPC_LOG(m_logger, "\tUpdating Path ", true);
+    DisplayVector("\t\tOld path: ", m_path);
     std::vector<unsigned> reversePath;
     reversePath.resize(m_path.size());
     std::reverse_copy(begin(m_path), end(m_path), begin(reversePath));
+    unsigned int oldTileId{reversePath.front()};
     for(unsigned int tileId : reversePath)
     {
         if(!Map::get()->canMoveOnTile(getCurrentTileId(), tileId))
         {
             m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
-            DisplayVector("Path Updated : ", m_path);
+            DisplayVector("\t\tPath Updated : ", m_path);
             return true;
         }
+        oldTileId = tileId;
     }
+    BOT_LOGIC_NPC_LOG(m_logger, "\t\tNo update needed", true);
     return false;
 }
 
@@ -146,7 +152,7 @@ int Npc::getNextPathTile() const
 
 void Npc::explore()
 {
-    BOT_LOGIC_NPC_LOG(m_logger, "Explore", true);
+    BOT_LOGIC_NPC_LOG(m_logger, "-Explore", true);
     if(hasGoal())
     {
         m_nextState = MOVING;
@@ -188,7 +194,7 @@ void Npc::explore()
 
 void Npc::followPath()
 {
-    BOT_LOGIC_NPC_LOG(m_logger, "FollowPath", true);
+    BOT_LOGIC_NPC_LOG(m_logger, "-FollowPath", true);
     // Get the direction between the two last nodes of m_path
     if(getCurrentTileId() == m_goal)
     {
@@ -202,19 +208,19 @@ void Npc::followPath()
     }
     m_nextActions.push_back(new Move{m_id, Map::get()->getNextDirection(getCurrentTileId(), getNextPathTile())});
     Map::get()->visitTile(getNextPathTile());
-    BOT_LOGIC_NPC_LOG(m_logger, "Deplacement vers " + std::to_string(getNextPathTile()), true);
+    BOT_LOGIC_NPC_LOG(m_logger, "\tDeplacement vers " + std::to_string(getNextPathTile()), true);
     m_nextState = MOVING;
 }
 
 void Npc::wait()
 {
-    BOT_LOGIC_NPC_LOG(m_logger, "wait", true);
+    BOT_LOGIC_NPC_LOG(m_logger, "-Wait", true);
     // TODO - Test why we are blocked ?
 }
 
 void Npc::interact()
 {
-    BOT_LOGIC_NPC_LOG(m_logger, "interact", true);
+    BOT_LOGIC_NPC_LOG(m_logger, "-Interact", true);
     // TODO - interact with some fancy stuff
 }
 

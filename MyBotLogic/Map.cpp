@@ -5,6 +5,15 @@
 
 Map Map::m_instance;
 
+void Map::setLoggerPath(const std::string &a_path)
+{
+#ifdef BOT_LOGIC_DEBUG_MAP
+    m_logger.Init(a_path, "Map.log");
+#endif
+
+    BOT_LOGIC_MAP_LOG(m_logger, "Configure", true);
+}
+
 void Map::setNodeType(unsigned int tileId, Node::NodeType tileType)
 {
     m_nodeMap[tileId]->setType(tileType);
@@ -263,4 +272,58 @@ void Map::testAddTile(std::vector<unsigned int>& v, unsigned int fromTileId, uns
     {
         v.push_back(toTileId);
     }
+}
+
+
+
+
+//----------------------------------------------------------------------
+// LOGGER
+//----------------------------------------------------------------------
+void Map::logMap(unsigned nbTurn) 
+{
+#ifdef BOT_LOGIC_DEBUG_MAP
+    std::string myLog = "\nTurn #" + std::to_string(nbTurn) + "\n";
+
+    // Printing some infos
+    myLog += "\tGoal Number : " + std::to_string(m_goalTiles.size()) + "\n";
+
+    // Printing the map
+    myLog += "Map : \n";
+    unsigned int currentTileId{};
+    for (int row = 0; row < m_height; ++row)
+    {
+        if (row % 2)
+        {
+            myLog += "   ";
+        }
+        for (int col = 0; col < m_width; ++col)
+        {
+            Node* tempNode = getNode(currentTileId++);
+            switch (tempNode->getType())
+            {
+            case Node::NodeType::NONE:
+                myLog += "-----";
+                break;
+
+            case Node::NodeType::FORBIDDEN:
+                myLog += "F----";
+                break;
+            case Node::NodeType::GOAL:
+                myLog += "G----";
+                break;
+            case Node::NodeType::OCCUPIED:
+                myLog += "X----";
+                break;
+            case Node::NodeType::PATH:
+                myLog += "P----";
+                break;
+            }
+            myLog += "  ";
+        }
+        myLog += "\n";
+    }
+    BOT_LOGIC_MAP_LOG(m_logger, myLog, false);
+#endif
+
 }

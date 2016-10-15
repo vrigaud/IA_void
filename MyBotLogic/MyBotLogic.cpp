@@ -24,7 +24,8 @@ MyBotLogic::MyBotLogic()
 #endif
 
     BOT_LOGIC_LOG(mLogger, "Configure", true);
-
+    Map::get()->setLoggerPath(_logpath);
+    m_turnCount = 0;
 
     //Write Code Here
 }
@@ -76,7 +77,11 @@ MyBotLogic::MyBotLogic()
 
 /*virtual*/ void MyBotLogic::FillActionList(TurnInfo& _turnInfo, std::vector<Action*>& _actionList)
 {
+
+    BOT_LOGIC_LOG(mLogger, "\nTURN #" + std::to_string(++m_turnCount), true);
+
     Map *myMap = Map::get();
+
     // Update graph
     for each(auto info in _turnInfo.tiles)
     {
@@ -114,6 +119,7 @@ MyBotLogic::MyBotLogic()
             }
         }
     }
+    myMap->logMap(m_turnCount);
 
     std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
     // Calcul path for npc and set goal tile
@@ -125,8 +131,8 @@ MyBotLogic::MyBotLogic()
         {
             unsigned int goalTile = goalMap[curNpc.second.npcID];
             myNpc->setGoal(goalTile);
+            myNpc->calculPath();
         }
-        myNpc->calculPath();
     }
 
     // Move Npcs
