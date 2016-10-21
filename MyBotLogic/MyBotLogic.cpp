@@ -147,7 +147,7 @@ MyBotLogic::MyBotLogic()
         // Get next npc tile
         int nextNpcTile = myNpc->getNextPathTile();
 
-        if(nextNpcTile > 0)
+        if(nextNpcTile >= 0)
         {
             // check if npc can move on nextTile
             for(std::pair<unsigned int, Npc*> curP : m_npcs)
@@ -176,12 +176,11 @@ MyBotLogic::MyBotLogic()
             {
                 _actionList.push_back(curAction->Clone());
             }
-
-            if(myNpc->getNextPathTile() < 0)
-            {
-                // If it's -1, this NPC finished his path
-                myMap->setNodeType(nextNpcTile, Node::OCCUPIED);
-            }
+        }
+        else
+        {
+            // If it's -1, this NPC finished his path
+            myMap->setNodeType(nextNpcTile, Node::OCCUPIED);
         }
     }
     std::for_each(begin(m_npcs),
