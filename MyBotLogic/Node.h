@@ -29,6 +29,12 @@ private:
     NodeType m_type;
     unsigned int m_edgesCost[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     Node* m_neighboors[8] = {nullptr};
+    unsigned int m_npcId = {0};
+    // TODO - Ajouter une zone a nos nodes pour les differencier et permettre de tout de suite savoir si on peut acceder a ce node ou pas
+
+    // TODO - Faire en sorte de definir si on sait tout du node ou pas pour eviter d'aller dessus, pour optimiser la recherche de chemin
+
+    // TODO - si jamais le node est entouré d'obstacles, faire en sorte de l'ignorer pour la recherche de chemin
 public:
     Node() = delete;
     Node(int xVal, int yVal, unsigned int idVal, NodeType typeVal);
@@ -56,11 +62,6 @@ public:
     void setEdgeCost(EDirection dir, int value)
     {
         m_edgesCost[dir] = value;
-        //Node* nodeNeighboor = getNeighboor(dir);
-        //if(nodeNeighboor != nullptr)
-        //{
-        //    nodeNeighboor->setEdgeCost(, value);
-        //}
     }
 
     bool isEdgeBlocked(EDirection dir) const
@@ -76,6 +77,16 @@ public:
     Node* getNeighboor(EDirection dir)
     {
         return m_neighboors[dir];
+    }
+
+    void setNpcIdOnNode(unsigned npcId)
+    {
+        m_npcId = npcId;
+    }
+
+    unsigned getNpcIdOnNode() const
+    {
+        return m_npcId;
     }
 
     unsigned int calculateManathan(const Node* goal) const

@@ -132,7 +132,7 @@ std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> np
             goalMap[npcId] = goal;
             npcInfo.erase(npcId);
         }
-    }    
+    }
 
     return goalMap;
 }
@@ -142,7 +142,24 @@ void Map::addGoalTile(unsigned int number)
 {
     if(std::find(begin(m_goalTiles), end(m_goalTiles), number) == end(m_goalTiles))
     {
-        m_goalTiles.push_back(number);
+        bool canAccesTile = false;
+        Node* currentNode = getNode(number);
+
+        for(int i = N; i <= NW; ++i)
+        {
+            EDirection dir = static_cast<EDirection>(i);
+            EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+            Node* tempNode = currentNode->getNeighboor(dir);
+            if(tempNode != nullptr && (!currentNode->isEdgeBlocked(dir) && !tempNode->isEdgeBlocked(invDir)))
+            {
+                canAccesTile = true;
+            }
+        }
+
+        if(canAccesTile)
+        {
+            m_goalTiles.push_back(number);
+        }
     }
 }
 
@@ -280,44 +297,51 @@ void Map::testAddTile(std::vector<unsigned int>& v, unsigned int fromTileId, uns
 //----------------------------------------------------------------------
 // LOGGER
 //----------------------------------------------------------------------
-void Map::logMap(unsigned nbTurn) 
+void Map::logMap(unsigned nbTurn)
 {
 #ifdef BOT_LOGIC_DEBUG_MAP
     std::string myLog = "\nTurn #" + std::to_string(nbTurn) + "\n";
 
     // Printing some infos
-    myLog += "\tGoal Number : " + std::to_string(m_goalTiles.size()) + "\n";
+    myLog += "\tAccessible Goal Number : " + std::to_string(m_goalTiles.size()) + "\n";
 
     // Printing the map
     myLog += "Map : \n";
     unsigned int currentTileId{};
-    for (int row = 0; row < m_height; ++row)
+    for(int row = 0; row < m_height; ++row)
     {
-        if (row % 2)
+        if(row % 2)
         {
             myLog += "   ";
         }
-        for (int col = 0; col < m_width; ++col)
+        for(int col = 0; col < m_width; ++col)
         {
             Node* tempNode = getNode(currentTileId++);
-            switch (tempNode->getType())
+            if(tempNode->getNpcIdOnNode() > 0)
             {
-            case Node::NodeType::NONE:
-                myLog += "-----";
-                break;
+                myLog += std::to_string(tempNode->getNpcIdOnNode()) + "----";
+            }
+            else
+            {
+                switch(tempNode->getType())
+                {
+                    case Node::NodeType::NONE:
+                        myLog += "-----";
+                        break;
 
-            case Node::NodeType::FORBIDDEN:
-                myLog += "F----";
-                break;
-            case Node::NodeType::GOAL:
-                myLog += "G----";
-                break;
-            case Node::NodeType::OCCUPIED:
-                myLog += "X----";
-                break;
-            case Node::NodeType::PATH:
-                myLog += "P----";
-                break;
+                    case Node::NodeType::FORBIDDEN:
+                        myLog += "F----";
+                        break;
+                    case Node::NodeType::GOAL:
+                        myLog += "G----";
+                        break;
+                    case Node::NodeType::OCCUPIED:
+                        myLog += "X----";
+                        break;
+                    case Node::NodeType::PATH:
+                        myLog += "P----";
+                        break;
+                }
             }
             myLog += "  ";
         }

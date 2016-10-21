@@ -62,6 +62,7 @@ MyBotLogic::MyBotLogic()
     for(std::pair<unsigned int, NPCInfo> curNpcs : _levelInfo.npcs)
     {
         m_npcs[curNpcs.second.npcID] = new Npc(curNpcs.second.npcID, curNpcs.second.tileID, m_logPath);
+        myMap->getNode(curNpcs.second.tileID)->setNpcIdOnNode(curNpcs.second.npcID);
     }
 }
 
@@ -81,6 +82,20 @@ MyBotLogic::MyBotLogic()
     BOT_LOGIC_LOG(mLogger, "\nTURN #" + std::to_string(++m_turnCount), true);
 
     Map *myMap = Map::get();
+
+    BOT_LOGIC_LOG(mLogger, "Update Edges", true);
+    for(std::pair<unsigned, ObjectInfo> info : _turnInfo.objects)
+    {
+        Node* node = myMap->getNode(info.second.tileID);
+        for(int i = N; i <= NW; ++i)
+        {
+            if(info.second.edgesCost[i] == 0)
+            {
+                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i), true);
+                node->setEdgeCost(static_cast<EDirection>(i), 0);
+            }
+        }
+    }
 
     // Update graph
     for each(auto info in _turnInfo.tiles)
@@ -106,21 +121,8 @@ MyBotLogic::MyBotLogic()
             myMap->addSeenTile(tileInfo.tileID);
         }
     }
-    BOT_LOGIC_LOG(mLogger, "Update Edges", true);
-    for(std::pair<unsigned, ObjectInfo> info : _turnInfo.objects)
-    {
-        Node* node = myMap->getNode(info.second.tileID);
-        for(int i = N; i <= NW; ++i)
-        {
-            if(info.second.edgesCost[i] == 0)
-            {
-                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i), true);
-                node->setEdgeCost(static_cast<EDirection>(i), 0);
-            }
-        }
-    }
-    myMap->logMap(m_turnCount);
 
+    myMap->logMap(m_turnCount);
     std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
     // Calcul path for npc and set goal tile
     for(std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
@@ -139,7 +141,7 @@ MyBotLogic::MyBotLogic()
     for each(auto info in _turnInfo.npcs)
     {
         // Get my search map
-        Npc* myNpc = m_npcs[info.first];
+        Npc* myNpc = m_npcs[info.second.npcID];
 
         // If my npc path is not correct anymore, we try to find another path
         myNpc->update();
@@ -175,6 +177,11 @@ MyBotLogic::MyBotLogic()
             for(Action* curAction : myNpc->getActions())
             {
                 _actionList.push_back(curAction->Clone());
+
+                // Update NPC position on node
+                // TODO - be careful about the action type, atm it's move but it can be different !!
+                myMap->getNode(myNpc->getCurrentTileId())->setNpcIdOnNode(0);
+                myMap->getNode(nextNpcTile)->setNpcIdOnNode(info.second.npcID);
             }
         }
         else

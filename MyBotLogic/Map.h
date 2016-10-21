@@ -47,7 +47,6 @@ public:
     void setLoggerPath(const std::string &a_path);
     void setNodeType(unsigned int, Node::NodeType);
     void createNode(Node*);
-    // TODO - connect all node with all theses neighboors
     void connectNodes();
     Node* getNode(unsigned int, unsigned int);
     Node* getNode(unsigned int);
