@@ -65,7 +65,6 @@ SET( AIBOT_SRC
 	MyBotLogic/Node.cpp
 	MyBotLogic/SearchMap.cpp
 	MyBotLogic/SearchNode.cpp
-	MyBotLogic/Singleton.cpp
 	
 	#Main
 	Main.cpp
