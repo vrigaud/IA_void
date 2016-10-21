@@ -2,36 +2,23 @@
 #include "Map.h"
 #include "SearchNode.h"
 
-void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* parent)
+void SearchMap::prepareNode(Node* refNode, unsigned int newGValue, SearchNode* parent)
 {
-    if(x < 0 || x > m_map->getWidth() - 1 || y < 0 || y > m_map->getHeight() - 1)
+    auto nodeType = refNode->getType();
+    if (nodeType == Node::FORBIDDEN)
     {
         return;
     }
-    if(m_map->getNode(x, y)->getType() == Node::NodeType::Forbidden)
-    {
-        return;
-    }
-
-    int id = m_map->getWidth() * y + x;
-
-    for(int i = 0; i < closedList.size(); i++)
-    {
-        if(id == closedList[i]->getId())
-        {
-            return;
-        }
-    }
-
-    SearchNode* node = new SearchNode(x, y, id, parent);
+    unsigned int id = refNode->getId();
+    SearchNode* node = new SearchNode(refNode->getPosition()->x, refNode->getPosition()->y, id, parent);
     node->setG(newGValue);
     node->setH(calculateManathan(node, m_goal));
 
-    for(int i = 0; i < openList.size(); i++)
+    for (int i = 0; i < openList.size(); i++)
     {
-        if(id == openList[i]->getId())
+        if (id == openList[i]->getId())
         {
-            if(node->getF() < openList[i]->getF())
+            if (node->getF() < openList[i]->getF())
             {
                 openList[i]->setG(newGValue);
                 openList[i]->setParent(parent);
@@ -47,61 +34,43 @@ void SearchMap::prepareNode(int x, int y, unsigned int newGValue, SearchNode* pa
     openList.push_back(node);
 }
 
-void SearchMap::search()
+std::vector<unsigned int> SearchMap::search()
 {
     while (!m_isGoalFound)
     {
         if (openList.empty())
         {
-            return;
+            return std::vector<unsigned int>{};
         }
 
-        SearchNode* current = getNextNodeToSearch();
+        SearchNode* currentSearchNode = getNextNodeToSearch();
+        Node* currentNode = Map::get()->getNode(currentSearchNode->getId());
 
-        if (current->getId() == m_goal->getId())
+        if (currentSearchNode->getId() == m_goal->getId())
         {
             SearchNode* getPath;
-            for (getPath = current; getPath != nullptr; getPath = getPath->getParent())
+            for (getPath = currentSearchNode; getPath != nullptr; getPath = getPath->getParent())
             {
                 m_pathToGoal.push_back(getPath->getId());
             }
             m_isGoalFound = true;
-            return;
-        }
-        if (current->getY() % 2 == 0)
-        {
-            prepareNode(current->getX() - 1, current->getY() - 1, current->getG() + 10, current);
-            prepareNode(current->getX(), current->getY() - 1, current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY(), current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY(), current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY() + 1, current->getG() + 10, current);
-            prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
-        }
-        else
-        {
-            prepareNode(current->getX(), current->getY() - 1, current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY() - 1, current->getG() + 10, current);
-
-            prepareNode(current->getX() - 1, current->getY(), current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY(), current->getG() + 10, current);
-
-            prepareNode(current->getX(), current->getY() + 1, current->getG() + 10, current);
-            prepareNode(current->getX() + 1, current->getY() + 1, current->getG() + 10, current);
+            return m_pathToGoal;
         }
 
-        for (int i = 0; i < openList.size(); i++)
+        for (int i = N; i <= NW; ++i)
         {
-            if (current->getId() == openList[i]->getId())
+            EDirection dir = static_cast<EDirection>(i);
+            EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+            Node* tempNode = currentNode->getNeighboor(dir);
+            if (tempNode != nullptr && (!currentNode->isEdgeBlocked(dir) && !tempNode->isEdgeBlocked(invDir)))
             {
-                openList.erase(openList.begin() + i);
+                prepareNode(tempNode, currentSearchNode->getG() + 10, currentSearchNode);
             }
         }
     }
 }
 
-SearchMap::SearchMap(Map* m, Node* start, Node* goal): m_map(m)
+SearchMap::SearchMap(Node* start, Node* goal)
 {
     initSearchMap(start, goal);
 }
@@ -139,7 +108,7 @@ void SearchMap::initSearchMap(Node* start, Node* goal)
 
 SearchNode* SearchMap::getNextNodeToSearch()
 {
-    unsigned int bestF = 99999;
+    unsigned int bestF = 9999999;
     int index = -1;
     SearchNode* nextNode = nullptr;
 
@@ -178,21 +147,11 @@ int SearchMap::getNextPathTile()
     unsigned int index = m_pathToGoal[m_pathToGoal.size() - 2];
     return index;
 }
-int SearchMap::getNextPathTileAndErase()
-{
-    if(m_pathToGoal.size() == 1)
-    {
-        return -1;
-    }
-    unsigned int index = m_pathToGoal[m_pathToGoal.size() - 2];
-    m_pathToGoal.pop_back();
-    return index;
-}
 
 void SearchMap::FindAnotherPath()
 {
     m_isInitialized = false;
-    initSearchMap(m_map->getNode(m_pathToGoal.back()), m_map->getNode(m_goal->getId()));
+    initSearchMap(Map::get()->getNode(m_pathToGoal.back()), Map::get()->getNode(m_goal->getId()));
     search();
 }
 
@@ -202,7 +161,7 @@ bool SearchMap::checkPathIntegrity()
     {
         for(int i = 0; i < m_pathToGoal.size(); i++)
         {
-            if(m_map->getNode(m_pathToGoal[i])->getType() == Node::Forbidden)
+            if(Map::get()->getNode(m_pathToGoal[i])->getType() == Node::FORBIDDEN)
             {
                 return false;
             }

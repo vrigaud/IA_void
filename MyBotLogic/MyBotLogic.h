@@ -20,8 +20,8 @@
 class MyBotLogic : public virtual BotLogicIF
 {
     // debug stuff
+    unsigned m_turnCount;
     std::string m_logPath;
-    Map MyMap;
     bool m_isNodesInit = false;
     std::map<unsigned int, unsigned int> m_nextNpcMove;
     std::map<unsigned int, Npc*> m_npcs;

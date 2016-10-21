@@ -13,17 +13,14 @@ class SearchMap
     std::vector<SearchNode*> openList;
     std::vector<SearchNode*> closedList;
     std::vector<unsigned int> m_pathToGoal;
-    Map* m_map;
     bool m_isGoalFound = false;
     bool m_isInitialized = false;
     bool m_isPathFinished = false;
 public:
     SearchMap() = delete;
-    SearchMap(Map* m) : m_start(nullptr), m_goal(nullptr), m_map(m)
+    SearchMap(SearchNode* start, SearchNode* goal) : m_start(start), m_goal(goal)
     {}
-    SearchMap(Map* m, SearchNode* start, SearchNode* goal) : m_start(start), m_goal(goal), m_map(m)
-    {}
-    SearchMap(Map* m, Node* start, Node* goal);
+    SearchMap(Node* start, Node* goal);
 
     bool isFinished() const
     {
@@ -31,7 +28,8 @@ public:
     }
     void initSearchMap(Node*, Node*);
     void prepareNode(int, int, unsigned int, SearchNode*);
-    void search();
+    void prepareNode(Node*, unsigned int, SearchNode*);
+    std::vector<unsigned int> search();
     SearchNode* getNextNodeToSearch();
     unsigned int calculateManathan(const SearchNode* start, const SearchNode* goal) const;
     void setStartNode(SearchNode* n)
@@ -43,14 +41,13 @@ public:
         m_goal = n;
     }
     int getNextPathTile();
-    int getNextPathTileAndErase();
     void FindAnotherPath();
     bool checkPathIntegrity();
     bool isPathFinished() const
     {
         return m_isPathFinished;
     }
-    unsigned int pathSize()
+    unsigned int pathSize() const
     {
         return m_pathToGoal.size();
     };
