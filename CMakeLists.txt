@@ -42,11 +42,11 @@ SET( AIBOT_HEADERS
 
 	#MY_BOT
 	MyBotLogic/MyBotLogic.h
+	MyBotLogic/Npc.h
 	MyBotLogic/Map.h
 	MyBotLogic/Node.h
 	MyBotLogic/SearchMap.h
 	MyBotLogic/SearchNode.h
-	MyBotLogic/Npc.h
 	MyBotLogic/Singleton.h
 )
 
@@ -60,11 +60,12 @@ SET( AIBOT_SRC
 
 	#MY_BOT
 	MyBotLogic/MyBotLogic.cpp
+	MyBotLogic/Npc.cpp
 	MyBotLogic/Map.cpp
 	MyBotLogic/Node.cpp
 	MyBotLogic/SearchMap.cpp
 	MyBotLogic/SearchNode.cpp
-	MyBotLogic/Npc.cpp
+	MyBotLogic/Singleton.cpp
 	
 	#Main
 	Main.cpp

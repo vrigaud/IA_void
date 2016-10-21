@@ -7,7 +7,6 @@
 #include <vector>
 #include "Singleton.h"
 #include "NPCInfo.h"
-#include "MapLogger.h"
 
 #include "Logger.h"
 
