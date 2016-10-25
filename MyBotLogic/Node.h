@@ -23,18 +23,24 @@ public:
         OCCUPIED,
         PATH,
     };
+    enum EdgeType
+    {
+        FREE,
+        WALL,
+        WINDOW,
+    };
 private:
     Position* m_pos;
     unsigned int m_ID;
     NodeType m_type;
-    unsigned int m_edgesCost[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    unsigned int m_edgesCost[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     Node* m_neighboors[8] = {nullptr};
     unsigned int m_npcId = {0};
-    // TODO - Ajouter une zone a nos nodes pour les differencier et permettre de tout de suite savoir si on peut acceder a ce node ou pas
-
+    float m_influence = {0};
     // TODO - Faire en sorte de definir si on sait tout du node ou pas pour eviter d'aller dessus, pour optimiser la recherche de chemin
+    bool m_knowEverythingAboutIt;
 
-    // TODO - si jamais le node est entouré d'obstacles, faire en sorte de l'ignorer pour la recherche de chemin
+    // TODO - Ajouter une zone a nos nodes pour les differencier et permettre de tout de suite savoir si on peut acceder a ce node ou pas
 public:
     Node() = delete;
     Node(int xVal, int yVal, unsigned int idVal, NodeType typeVal);
@@ -66,7 +72,7 @@ public:
 
     bool isEdgeBlocked(EDirection dir) const
     {
-        return m_edgesCost[dir] == 0 ? true : false;
+        return m_edgesCost[dir] == 0 ? false : true;
     }
 
     void setNeighboor(EDirection dir, Node* p)
@@ -87,6 +93,31 @@ public:
     unsigned getNpcIdOnNode() const
     {
         return m_npcId;
+    }
+
+    EdgeType getEdge(EDirection dir) const
+    {
+        return static_cast<EdgeType>(m_edgesCost[dir]);
+    }
+
+    float getInfluence() const
+    {
+        return m_influence;
+    }
+
+    void setInfluence(float inf)
+    {
+        m_influence = inf;
+    }
+
+    bool knowEverythingAboutThis() const
+    {
+        return m_knowEverythingAboutIt;
+    }
+
+    void setKnowEverything(bool know)
+    {
+        m_knowEverythingAboutIt = know;
     }
 
     unsigned int calculateManathan(const Node* goal) const

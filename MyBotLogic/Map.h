@@ -29,13 +29,16 @@ class Map : Singleton
     static Map m_instance;
     unsigned int m_width;
     unsigned int m_height;
+    unsigned int m_influenceRange;
     std::map<unsigned int, Node*> m_nodeMap;
     std::vector<unsigned int> m_goalTiles;
     std::map<unsigned, bool> m_seenTiles;
+    std::vector<Node*> m_interestingNodes;
     //std::map<unsigned int, SearchMap*> m_searchMap;
 
     // Log stuff
     Logger m_logger;
+    Logger m_loggerInfluence;
 
 private:
     Map() : m_width(0), m_height(0)
@@ -73,6 +76,14 @@ public:
     {
         m_height = h;
     }
+    unsigned int getInfluenceRange() const
+    {
+        return m_influenceRange;
+    }
+    void setInfluenceRange(unsigned int range)
+    {
+        m_influenceRange = range;
+    }
 
     void addSeenTile(unsigned tileId)
     {
@@ -107,14 +118,9 @@ public:
     }
 
     void addGoalTile(unsigned int number);
-    //void addSearchMap(unsigned int index, SearchMap* smap)
-    //{
-    //    m_searchMap[index] = smap;
-    //}
-    //SearchMap* getSearchMap(unsigned int index)
-    //{
-    //    return m_searchMap[index];
-    //}
+    void createInfluenceMap();
+    void propagateInfluence();
+    void propage(Node* myNode, unsigned curDist, unsigned maxDist, float initialInfluence) const;
 
     std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
 
@@ -123,6 +129,7 @@ public:
     std::vector<unsigned int> getNearUnVisitedTile(unsigned int a_currentId);
 
     void logMap(unsigned);
+    void logInfluenceMap(unsigned nbTurn);
 };
 
 #endif // MAP_HEADER

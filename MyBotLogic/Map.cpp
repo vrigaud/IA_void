@@ -2,6 +2,7 @@
 #include "TurnInfo.h"
 #include "SearchMap.h"
 #include "NPCInfo.h"
+#include <Math.h>
 
 Map Map::m_instance;
 
@@ -9,9 +10,11 @@ void Map::setLoggerPath(const std::string &a_path)
 {
 #ifdef BOT_LOGIC_DEBUG_MAP
     m_logger.Init(a_path, "Map.log");
+    m_loggerInfluence.Init(a_path, "Map_Influence.log");
 #endif
 
     BOT_LOGIC_MAP_LOG(m_logger, "Configure", true);
+    BOT_LOGIC_MAP_LOG(m_loggerInfluence, "Configure", true);
 }
 
 void Map::setNodeType(unsigned int tileId, Node::NodeType tileType)
@@ -159,6 +162,92 @@ void Map::addGoalTile(unsigned int number)
         if(canAccesTile)
         {
             m_goalTiles.push_back(number);
+        }
+    }
+}
+
+void Map::createInfluenceMap()
+{
+    m_interestingNodes.clear();
+    for(auto node : m_seenTiles)
+    {
+        Node* myNode = getNode(node.first);
+        myNode->setInfluence(0.0f);
+        if(!node.second)
+        {
+            float tempInflu = 0.0f;
+            for(int i = N; i <= NW; ++i)
+            {
+                EDirection dir = static_cast<EDirection>(i);
+                EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+                auto edgeType = myNode->getEdge(dir);
+                Node* tempNode = myNode->getNeighboor(dir);
+                auto edgeNeibType = Node::FREE;
+                if(tempNode != nullptr)
+                {
+                    edgeNeibType = tempNode->getEdge(invDir);
+                }
+                if(edgeType == Node::WINDOW || edgeNeibType == Node::WINDOW)
+                {
+                    tempInflu += 1.0f;
+                }
+            }
+
+            for(int i = N; i <= NW; ++i)
+            {
+                EDirection dir = static_cast<EDirection>(i);
+                EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+                Node* tempNode = myNode->getNeighboor(dir);
+                if(tempNode != nullptr && (!myNode->isEdgeBlocked(dir) && !tempNode->isEdgeBlocked(invDir)))
+                {
+                    if(tempNode->getType() == Node::NONE)
+                    {
+                        tempNode->setInfluence(1.0f);
+                        m_interestingNodes.push_back(tempNode);
+                    }
+                }
+            }
+            if(tempInflu > 0.0f)
+            {
+                myNode->setInfluence(tempInflu);
+                m_interestingNodes.push_back(myNode);
+            }
+        }
+    }
+    propagateInfluence();
+}
+
+void Map::propagateInfluence()
+{
+    unsigned maxDist = m_influenceRange;
+    for(auto node : m_interestingNodes)
+    {
+        propage(node, 0, maxDist, node->getInfluence());
+    }
+}
+
+void Map::propage(Node* myNode, unsigned curDist, unsigned maxDist, float initialInfluence) const
+{
+    if(curDist > maxDist)
+    {
+        return;
+    }
+    for(int i = N; i <= NW; ++i)
+    {
+        EDirection dir = static_cast<EDirection>(i);
+        EDirection invDir = static_cast<EDirection>((dir + 4) % 8);
+        Node* tempNode = myNode->getNeighboor(dir);
+        if(tempNode != nullptr && (!myNode->isEdgeBlocked(dir) && !tempNode->isEdgeBlocked(invDir)))
+        {
+            if(tempNode->getType() == Node::PATH)
+            {
+                auto newInfluence = myNode->getInfluence() - (initialInfluence / m_influenceRange);
+                if(newInfluence > tempNode->getInfluence())
+                {                    
+                    tempNode->setInfluence(newInfluence);
+                }
+                propage(tempNode, ++curDist, maxDist, initialInfluence);
+            }
         }
     }
 }
@@ -348,6 +437,41 @@ void Map::logMap(unsigned nbTurn)
         myLog += "\n";
     }
     BOT_LOGIC_MAP_LOG(m_logger, myLog, false);
+#endif
+
+}
+
+void Map::logInfluenceMap(unsigned nbTurn)
+{
+#ifdef BOT_LOGIC_DEBUG_MAP
+    std::string myLog = "\nTurn #" + std::to_string(nbTurn) + "\n";
+    
+    // Printing the map
+    myLog += "Map : \n";
+    unsigned int currentTileId{};
+    for(int row = 0; row < m_height; ++row)
+    {
+        if(row % 2)
+        {
+            myLog += "   ";
+        }
+        for(int col = 0; col < m_width; ++col)
+        {
+            Node* tempNode = getNode(currentTileId++);
+            float influ = std::trunc(100 * tempNode->getInfluence()) / 100;
+            if(tempNode->getNpcIdOnNode() > 0)
+            {
+                myLog += std::to_string(tempNode->getNpcIdOnNode()) + "-" + std::to_string(influ);
+            }
+            else
+            {
+                myLog += std::to_string(influ);
+            }
+            myLog += "  ";
+        }
+        myLog += "\n";
+    }
+    BOT_LOGIC_MAP_LOG(m_loggerInfluence, myLog, false);
 #endif
 
 }

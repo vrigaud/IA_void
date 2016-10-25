@@ -45,6 +45,7 @@ MyBotLogic::MyBotLogic()
     Map *myMap = Map::get();
     myMap->setHeight(rowCount);
     myMap->setWidth(colCount);
+    myMap->setInfluenceRange(_levelInfo.visionRange + 1);
     unsigned int countIndex = 0;
     for(int i = 0; i < rowCount; ++i)
     {
@@ -91,8 +92,8 @@ MyBotLogic::MyBotLogic()
         {
             if(info.second.edgesCost[i] == 0)
             {
-                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i), true);
-                node->setEdgeCost(static_cast<EDirection>(i), 0);
+                BOT_LOGIC_LOG(mLogger, "\tTileID : " + std::to_string(info.second.tileID) + " - Dir : " + std::to_string(i) + " - Type : " + std::to_string(info.second.objectType), true);
+                node->setEdgeCost(static_cast<EDirection>(i), info.second.objectType + 1);
             }
         }
     }
@@ -121,9 +122,17 @@ MyBotLogic::MyBotLogic()
             myMap->addSeenTile(tileInfo.tileID);
         }
     }
+    std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
+
+    // If any NPC are exploring, create an influence map
+    if(goalMap.size() < _turnInfo.npcs.size())
+    {
+        myMap->createInfluenceMap();
+        myMap->logInfluenceMap(m_turnCount);
+    }
 
     myMap->logMap(m_turnCount);
-    std::map<unsigned, unsigned> goalMap = myMap->getBestGoalTile(_turnInfo.npcs);
+
     // Calcul path for npc and set goal tile
     for(std::pair<unsigned int, NPCInfo> curNpc : _turnInfo.npcs)
     {
@@ -183,11 +192,6 @@ MyBotLogic::MyBotLogic()
                 myMap->getNode(myNpc->getCurrentTileId())->setNpcIdOnNode(0);
                 myMap->getNode(nextNpcTile)->setNpcIdOnNode(info.second.npcID);
             }
-        }
-        else
-        {
-            // If it's -1, this NPC finished his path
-            myMap->setNodeType(nextNpcTile, Node::OCCUPIED);
         }
     }
     std::for_each(begin(m_npcs),
