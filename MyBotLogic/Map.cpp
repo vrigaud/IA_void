@@ -243,7 +243,7 @@ void Map::propage(Node* myNode, unsigned curDist, unsigned maxDist, float initia
             {
                 auto newInfluence = myNode->getInfluence() - (initialInfluence / m_influenceRange);
                 if(newInfluence > tempNode->getInfluence())
-                {                    
+                {
                     tempNode->setInfluence(newInfluence);
                 }
                 propage(tempNode, ++curDist, maxDist, initialInfluence);
@@ -356,20 +356,58 @@ bool Map::canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId)
     return isStateOk && !getNode(a_fromTileId)->isEdgeBlocked(dir) && !getNode(a_toTileId)->isEdgeBlocked(invDir);
 }
 
-std::vector<unsigned int> Map::getNearUnVisitedTile(unsigned int a_currentId)
+std::vector<unsigned int> Map::getNearInfluencedTile(unsigned int a_currentId)
 {
     Node* current = getNode(a_currentId);
     std::vector<unsigned int> v;
 
-    for(int i = N; i <= NW; ++i)
+    if(isAllNeighboorHaveSameInfluence(current))
     {
-        if(current->getNeighboor(static_cast<EDirection>(i)))
-        {
-            testAddTile(v, current->getId(), current->getNeighboor(static_cast<EDirection>(i))->getId());
-        }
+        return v;
     }
 
+    float bestinf = 0.0f;
+    unsigned bestTile;
+    for(int i = N; i <= NW; ++i)
+    {
+        Node* neighboor = current->getNeighboor(static_cast<EDirection>(i));
+        if(neighboor && canMoveOnTile(a_currentId, neighboor->getId()))
+        {
+            float nodeinf = neighboor->getInfluence();
+            if(nodeinf > 0.0f)
+            {
+                if(bestinf < nodeinf)
+                {
+                    bestinf = nodeinf;
+                    bestTile = neighboor->getId();
+                }
+            }
+        }
+    }
+    v.push_back(bestTile);
     return v;
+}
+
+bool Map::isAllNeighboorHaveSameInfluence(Node* node) const
+{
+    float startInf = 0.0f;
+    for(int i = N; i <= NW; ++i)
+    {
+        Node* neighboor = node->getNeighboor(static_cast<EDirection>(i));
+        if(neighboor)
+        {
+            if(startInf == 0.0f)
+            {
+                startInf = neighboor->getInfluence();
+            }
+
+            if(startInf != neighboor->getInfluence())
+            {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void Map::testAddTile(std::vector<unsigned int>& v, unsigned int fromTileId, unsigned int toTileId)
@@ -445,7 +483,7 @@ void Map::logInfluenceMap(unsigned nbTurn)
 {
 #ifdef BOT_LOGIC_DEBUG_MAP
     std::string myLog = "\nTurn #" + std::to_string(nbTurn) + "\n";
-    
+
     // Printing the map
     myLog += "Map : \n";
     unsigned int currentTileId{};

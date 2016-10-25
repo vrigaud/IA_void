@@ -9,6 +9,7 @@
 #include "NPCInfo.h"
 
 #include "Logger.h"
+#include <algorithm>
 
 #ifdef _DEBUG
 #define BOT_LOGIC_DEBUG_MAP
@@ -117,6 +118,13 @@ public:
         return v;
     }
 
+    std::vector<unsigned> getMostInfluencedTile()
+    {
+        // TODO - Ajout le sort ici pour retourner les tiles ID les plus influentes
+        std::vector<unsigned> v;
+        return v;
+    }
+
     void addGoalTile(unsigned int number);
     void createInfluenceMap();
     void propagateInfluence();
@@ -126,8 +134,8 @@ public:
 
     bool canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId);
 
-    std::vector<unsigned int> getNearUnVisitedTile(unsigned int a_currentId);
-
+    std::vector<unsigned int> getNearInfluencedTile(unsigned int a_currentId);
+    bool isAllNeighboorHaveSameInfluence(Node* node) const;
     void logMap(unsigned);
     void logInfluenceMap(unsigned nbTurn);
 };

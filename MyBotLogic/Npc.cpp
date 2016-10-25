@@ -159,7 +159,7 @@ void Npc::explore()
         return;
     }
 
-    std::vector<unsigned int> v = Map::get()->getNearUnVisitedTile(getCurrentTileId());
+    std::vector<unsigned int> v = Map::get()->getNearInfluencedTile(getCurrentTileId());
 
     if(v.size() <= 0)
     {
