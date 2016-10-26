@@ -5,7 +5,7 @@
 void SearchMap::prepareNode(Node* refNode, unsigned int newGValue, SearchNode* parent)
 {
     auto nodeType = refNode->getType();
-    if (nodeType == Node::FORBIDDEN)
+    if (std::find(begin(m_forbiddenType), end(m_forbiddenType), nodeType) != end(m_forbiddenType))
     {
         return;
     }
@@ -13,6 +13,14 @@ void SearchMap::prepareNode(Node* refNode, unsigned int newGValue, SearchNode* p
     SearchNode* node = new SearchNode(refNode->getPosition()->x, refNode->getPosition()->y, id, parent);
     node->setG(newGValue);
     node->setH(calculateManathan(node, m_goal));
+
+    for(int i = 0; i < closedList.size(); i++)
+    {
+        if(id == closedList[i]->getId())
+        {
+            return;
+        }
+    }
 
     for (int i = 0; i < openList.size(); i++)
     {
@@ -74,11 +82,17 @@ SearchMap::SearchMap(Node* start, Node* goal)
 {
     initSearchMap(start, goal);
 }
+SearchMap::SearchMap(Node* start, Node* goal, std::set<Node::NodeType> forbiddenType)
+{
+    initSearchMap(start, goal, forbiddenType);
+}
 
-void SearchMap::initSearchMap(Node* start, Node* goal)
+void SearchMap::initSearchMap(Node* start, Node* goal, std::set<Node::NodeType> forbiddenType)
 {
     if(!m_isInitialized)
     {
+        m_forbiddenType = forbiddenType;
+
         for(int i = 0; i < openList.size(); i++)
         {
             delete openList[i];

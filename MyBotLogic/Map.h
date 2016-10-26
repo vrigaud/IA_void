@@ -118,24 +118,20 @@ public:
         return v;
     }
 
-    std::vector<unsigned> getMostInfluencedTile()
-    {
-        // TODO - Ajout le sort ici pour retourner les tiles ID les plus influentes
-        std::vector<unsigned> v;
-        return v;
-    }
+    std::vector<unsigned> getMostInfluencedTile();
 
     void addGoalTile(unsigned int number);
     void createInfluenceMap();
     void propagateInfluence();
     void propage(Node* myNode, unsigned curDist, unsigned maxDist, float initialInfluence) const;
 
-    std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end);
+    std::vector<unsigned int> getNpcPath(unsigned int a_start, unsigned int a_end, std::set<Node::NodeType> forbiddenType = {Node::FORBIDDEN});
+    std::vector<unsigned int> getNearUnVisitedTile(unsigned int a_currentId);
 
     bool canMoveOnTile(unsigned int a_fromTileId, unsigned int a_toTileId);
 
     std::vector<unsigned int> getNearInfluencedTile(unsigned int a_currentId);
-    bool isAllNeighboorHaveSameInfluence(Node* node) const;
+    bool isAllNeighboorHaveSameInfluence(Node* node);
     void logMap(unsigned);
     void logInfluenceMap(unsigned nbTurn);
 };

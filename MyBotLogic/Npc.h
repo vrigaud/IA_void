@@ -87,7 +87,6 @@ public:
     
     void setGoal(unsigned int a_id)
     {
-        BOT_LOGIC_NPC_LOG(m_logger, "Set NPC goal " + std::to_string(a_id), true);
         m_goal = a_id;
         m_hasGoal = true;
     }

@@ -141,6 +141,23 @@ std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> np
 }
 
 
+std::vector<unsigned> Map::getMostInfluencedTile()
+{
+    std::vector<unsigned> v;
+    for(auto node : m_seenTiles)
+    {
+        if(!node.second)
+        {
+            
+        }
+    }
+    for(auto node : m_interestingNodes)
+    {
+        v.push_back(node->getId());
+    }
+    return v;
+}
+
 void Map::addGoalTile(unsigned int number)
 {
     if(std::find(begin(m_goalTiles), end(m_goalTiles), number) == end(m_goalTiles))
@@ -214,6 +231,9 @@ void Map::createInfluenceMap()
             }
         }
     }
+    std::sort(begin(m_interestingNodes), end(m_interestingNodes), [](const Node* a, const Node* b) {
+        return a->getInfluence() > b->getInfluence();
+    });
     propagateInfluence();
 }
 
@@ -337,9 +357,9 @@ std::string Map::getStringDirection(unsigned int start, unsigned int end)
     return direction;
 }
 
-std::vector<unsigned int> Map::getNpcPath(unsigned int a_start, unsigned int a_end)
+std::vector<unsigned int> Map::getNpcPath(unsigned int a_start, unsigned int a_end, std::set<Node::NodeType> forbiddenType)
 {
-    SearchMap mySearch{getNode(a_start), getNode(a_end)};
+    SearchMap mySearch{getNode(a_start), getNode(a_end), forbiddenType};
     return mySearch.search();
 }
 
@@ -388,14 +408,16 @@ std::vector<unsigned int> Map::getNearInfluencedTile(unsigned int a_currentId)
     return v;
 }
 
-bool Map::isAllNeighboorHaveSameInfluence(Node* node) const
+bool Map::isAllNeighboorHaveSameInfluence(Node* node)
 {
     float startInf = 0.0f;
+    int counterTile = 0;
     for(int i = N; i <= NW; ++i)
     {
         Node* neighboor = node->getNeighboor(static_cast<EDirection>(i));
-        if(neighboor)
+        if(neighboor && canMoveOnTile(node->getId(), neighboor->getId()))
         {
+            counterTile++;
             if(startInf == 0.0f)
             {
                 startInf = neighboor->getInfluence();
@@ -406,6 +428,11 @@ bool Map::isAllNeighboorHaveSameInfluence(Node* node) const
                 return false;
             }
         }
+    }
+    // Ensure moving on the only available tile !
+    if(counterTile == 1)
+    {
+        return false;
     }
     return true;
 }

@@ -115,7 +115,6 @@ void Npc::calculPath()
         return;
     }
     m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
-    DisplayVector("\tNpc base path :", m_path);
 }
 
 bool Npc::updatePath()
@@ -128,7 +127,7 @@ bool Npc::updatePath()
     unsigned int oldTileId{reversePath.front()};
     for(unsigned int tileId : reversePath)
     {
-        if(!Map::get()->canMoveOnTile(getCurrentTileId(), tileId))
+        if(!Map::get()->canMoveOnTile(oldTileId, tileId))
         {
             m_path = Map::get()->getNpcPath(getCurrentTileId(), m_goal);
             DisplayVector("\t\tPath Updated : ", m_path);
@@ -155,6 +154,8 @@ void Npc::explore()
     BOT_LOGIC_NPC_LOG(m_logger, "-Explore", true);
     if(hasGoal())
     {
+        BOT_LOGIC_NPC_LOG(m_logger, "\tNPC have a goal : " + std::to_string(m_goal), true);
+        DisplayVector("\tNpc base path :", m_path);
         m_nextState = MOVING;
         return;
     }
@@ -163,10 +164,11 @@ void Npc::explore()
 
     if(v.size() <= 0)
     {
-        std::vector<unsigned> NonVisitedTiles = Map::get()->getNonVisitedTile();
-        for(unsigned index : NonVisitedTiles)
+        std::vector<unsigned> nonVisitedTiles = Map::get()->getNonVisitedTile();
+        DisplayVector("\t-Looking for the non visited tiles : ", nonVisitedTiles);
+        for(unsigned index : nonVisitedTiles)
         {
-            std::vector<unsigned> temp = Map::get()->getNpcPath(getCurrentTileId(), index);
+            std::vector<unsigned> temp = Map::get()->getNpcPath(getCurrentTileId(), index, {Node::NodeType::FORBIDDEN, Node::NodeType::NONE});
             if(!temp.empty())
             {
                 m_path = temp;

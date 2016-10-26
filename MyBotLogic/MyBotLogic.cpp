@@ -45,7 +45,7 @@ MyBotLogic::MyBotLogic()
     Map *myMap = Map::get();
     myMap->setHeight(rowCount);
     myMap->setWidth(colCount);
-    myMap->setInfluenceRange(_levelInfo.visionRange + 1);
+    myMap->setInfluenceRange(max(_levelInfo.visionRange + 2, 4));
     unsigned int countIndex = 0;
     for(int i = 0; i < rowCount; ++i)
     {
