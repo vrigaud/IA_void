@@ -140,23 +140,23 @@ std::map<unsigned, unsigned> Map::getBestGoalTile(std::map<unsigned, NPCInfo> np
     return goalMap;
 }
 
-
-std::vector<unsigned> Map::getMostInfluencedTile()
-{
-    std::vector<unsigned> v;
-    for(auto node : m_seenTiles)
-    {
-        if(!node.second)
-        {
-            
-        }
-    }
-    for(auto node : m_interestingNodes)
-    {
-        v.push_back(node->getId());
-    }
-    return v;
-}
+// TODO - See if we can implement this
+//std::vector<unsigned> Map::getMostInfluencedTile()
+//{
+//    std::vector<unsigned> v;
+//    for(auto node : m_seenTiles)
+//    {
+//        if(!node.second)
+//        {
+//            
+//        }
+//    }
+//    for(auto node : m_interestingNodes)
+//    {
+//        v.push_back(node->getId());
+//    }
+//    return v;
+//}
 
 void Map::addGoalTile(unsigned int number)
 {
